@@ -8,10 +8,10 @@ import { Calculator } from './components/browser/Calculator';
 import { PeekCamera } from './components/browser/PeekCamera';
 import { VideoVault } from './components/vault/VideoVault';
 import { ProUnlockModal } from './components/vault/ProUnlockModal';
-import { AppLauncherModal } from './components/browser/AppLauncherModal';
 import { RemoteHostModal } from './components/remote/RemoteHostModal';
 import { RemoteViewer } from './components/remote/RemoteViewer';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { Smartphone, Monitor } from 'lucide-react';
 
 function App() {
   const { 
@@ -22,7 +22,8 @@ function App() {
     setShowRemoteHostModal 
   } = useAppStore();
 
-  const [viewerRoomId, setViewerRoomId] = useState<string | null>(null);
+  const [activeDeviceMode, setActiveDeviceMode] = useState<'phone' | 'pc'>('phone');
+  const [viewerRoomId, setViewerRoomId] = useState<string>('');
 
   useEffect(() => {
     // Check URL parameters for PC Remote Viewer mode
@@ -31,7 +32,10 @@ function App() {
     const isViewer = params.get('viewer') === '1' || viewParam !== null;
 
     if (isViewer) {
-      setViewerRoomId(viewParam || '');
+      setActiveDeviceMode('pc');
+      if (viewParam) {
+        setViewerRoomId(viewParam);
+      }
     }
   }, []);
 
@@ -43,45 +47,71 @@ function App() {
     }
   }, [wakeLockAlwaysOn, recordingStatus]);
 
-  // If in PC Remote Viewer Mode -> Render Remote Dashboard
-  if (viewerRoomId !== null) {
-    return <RemoteViewer initialRoomId={viewerRoomId} />;
-  }
-
   return (
-    <div className="w-full h-full relative overflow-hidden bg-black text-white">
-      {/* 1. Standby / Lockscreen Mode */}
-      {uiMode === 'lockscreen' && <LockScreen />}
+    <div className="w-full h-full relative overflow-hidden bg-black text-white flex flex-col">
+      {/* Top Device Mode Bar (Quick 1-click switch between Phone Host and PC Viewer) */}
+      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 border border-slate-700/60 backdrop-blur-md rounded-full p-1 flex items-center space-x-1 shadow-2xl opacity-40 hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => setActiveDeviceMode('phone')}
+          className={`px-3 py-1 rounded-full text-[11px] font-medium flex items-center space-x-1 transition ${
+            activeDeviceMode === 'phone'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Smartphone size={12} />
+          <span>Điện Thoại</span>
+        </button>
+        <button
+          onClick={() => setActiveDeviceMode('pc')}
+          className={`px-3 py-1 rounded-full text-[11px] font-medium flex items-center space-x-1 transition ${
+            activeDeviceMode === 'pc'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Monitor size={12} />
+          <span>Máy Tính (Xem Từ Xa)</span>
+        </button>
+      </div>
 
-      {/* 2. OLED Pure Black Mode */}
-      {uiMode === 'oled' && <OledBlack />}
+      {/* VIEW: PC Remote Monitor */}
+      {activeDeviceMode === 'pc' ? (
+        <RemoteViewer initialRoomId={viewerRoomId} />
+      ) : (
+        /* VIEW: Mobile Host Disguise */
+        <div className="w-full h-full relative flex-1 overflow-hidden">
+          {/* 1. Standby / Lockscreen Mode */}
+          {uiMode === 'lockscreen' && <LockScreen />}
 
-      {/* 3. Disguised Web Browser */}
-      {uiMode === 'browser' && <WebBrowser />}
+          {/* 2. OLED Pure Black Mode */}
+          {uiMode === 'oled' && <OledBlack />}
 
-      {/* 4. Disguised Calculator */}
-      {uiMode === 'calculator' && <Calculator />}
+          {/* 3. Disguised Web Browser */}
+          {uiMode === 'browser' && <WebBrowser />}
 
-      {/* 5. Secret Encrypted Video Vault (Tier 2 Protected) */}
-      {uiMode === 'vault' && <VideoVault />}
+          {/* 4. Disguised Calculator */}
+          {uiMode === 'calculator' && <Calculator />}
 
-      {/* Floating Peek Camera View */}
-      <PeekCamera />
+          {/* 5. Secret Encrypted Video Vault (Tier 2 Protected) */}
+          {uiMode === 'vault' && <VideoVault />}
 
-      {/* Disguised Pro Upgrade / Media Vault Passcode Modal */}
-      <ProUnlockModal />
+          {/* Floating Peek Camera View */}
+          <PeekCamera />
 
-      {/* App Launcher Modal (iCSee, XMEye, Camera, etc.) */}
-      <AppLauncherModal />
+          {/* Disguised Pro Upgrade / Media Vault Passcode Modal */}
+          <ProUnlockModal />
 
-      {/* Remote Cast to PC Host Modal */}
-      <RemoteHostModal 
-        isOpen={showRemoteHostModal} 
-        onClose={() => setShowRemoteHostModal(false)} 
-      />
+          {/* Remote Cast to PC Host Modal */}
+          <RemoteHostModal 
+            isOpen={showRemoteHostModal} 
+            onClose={() => setShowRemoteHostModal(false)} 
+          />
 
-      {/* System Settings Modal */}
-      <SettingsModal />
+          {/* System Settings Modal */}
+          <SettingsModal />
+        </div>
+      )}
     </div>
   );
 }

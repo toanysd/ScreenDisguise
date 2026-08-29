@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
-import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock, Maximize, Minimize } from 'lucide-react';
+import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock, Maximize, Minimize, Cast } from 'lucide-react';
 
 export const LockScreen: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -24,6 +24,7 @@ export const LockScreen: React.FC = () => {
     recordingDuration,
     setPeekPreviewActive,
     peekPreviewActive,
+    setShowRemoteHostModal,
     isFullscreen,
     setIsFullscreen,
   } = useAppStore();
@@ -191,17 +192,25 @@ export const LockScreen: React.FC = () => {
           className="w-full bg-blue-600/30 hover:bg-blue-600/50 border-b border-blue-500/30 py-1.5 px-4 text-center text-xs text-blue-200 cursor-pointer flex items-center justify-center space-x-1.5 transition z-30"
         >
           <Maximize size={12} />
-          <span>Chạm vào đây để Bật Toàn Màn Hình (Ẩn viền trình duyệt)</span>
+          <span>Chạm vào đây để Bật Toàn Màn Hình</span>
         </div>
       )}
 
       {/* Status Bar */}
       <div className="w-full flex justify-between items-center px-7 pt-3 text-xs font-medium opacity-80 z-20">
         <span>{carrierName || 'docomo'}</span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {recordingStatus === 'recording' && (
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block mr-1" />
           )}
+          {/* Quick Cast Button on Lockscreen */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowRemoteHostModal(true); }}
+            className="p-1 text-purple-400 hover:text-purple-300 active:scale-95 transition"
+            title="Kết nối Máy Tính (Cast to PC)"
+          >
+            <Cast size={15} />
+          </button>
           <button 
             onClick={(e) => { e.stopPropagation(); fullscreenManager.toggle(); }} 
             className="opacity-60 hover:opacity-100 p-0.5" 
@@ -266,11 +275,11 @@ export const LockScreen: React.FC = () => {
         </button>
 
         <button
-          onClick={(e) => { e.stopPropagation(); setUIMode('oled'); }}
-          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
-          title="Màn hình đen OLED tuyệt đối"
+          onClick={(e) => { e.stopPropagation(); setShowRemoteHostModal(true); }}
+          className="w-12 h-12 rounded-full bg-purple-950/60 border border-purple-500/40 backdrop-blur-md flex items-center justify-center text-purple-300 active:bg-purple-900 transition"
+          title="Kết nối Máy Tính"
         >
-          <Moon size={19} />
+          <Cast size={19} />
         </button>
       </div>
 

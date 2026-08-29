@@ -4,7 +4,7 @@ import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Smartphone, Cast 
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Cast 
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -20,7 +20,6 @@ export const WebBrowser: React.FC = () => {
     peekPreviewActive,
     setShowSettings,
     setShowProUnlock,
-    setShowAppLauncher,
     setShowRemoteHostModal,
     isFullscreen,
   } = useAppStore();
@@ -115,14 +114,6 @@ export const WebBrowser: React.FC = () => {
         </form>
 
         <button 
-          onClick={() => setShowRemoteHostModal(true)}
-          className="text-purple-400 hover:text-purple-300 p-1.5 rounded-md hover:bg-slate-800"
-          title="Xem từ máy tính (Cast to PC)"
-        >
-          <Cast size={18} />
-        </button>
-
-        <button 
           onClick={() => fullscreenManager.toggle()}
           className="text-slate-400 p-1.5 rounded-md hover:text-slate-200 active:bg-slate-800"
           title="Toàn màn hình"
@@ -141,32 +132,14 @@ export const WebBrowser: React.FC = () => {
         </button>
       </div>
 
-      {/* Quick Bookmarks / Chips */}
+      {/* Pure Disguised Bookmarks (100% realistic websites) */}
       <div className="bg-slate-950 px-3 py-1.5 flex space-x-2 overflow-x-auto text-[11px] border-b border-slate-800/80 shrink-0 items-center">
-        {/* Quick App Launcher Chip */}
-        <button
-          onClick={() => setShowAppLauncher(true)}
-          className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-full text-emerald-300 whitespace-nowrap active:scale-95 transition flex items-center space-x-1 shrink-0 font-medium"
-        >
-          <Smartphone size={11} />
-          <span>Mở iCSee</span>
-        </button>
-
-        {/* Quick Cast to PC Chip */}
-        <button
-          onClick={() => setShowRemoteHostModal(true)}
-          className="px-2.5 py-1 bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 rounded-full text-purple-300 whitespace-nowrap active:scale-95 transition flex items-center space-x-1 shrink-0 font-medium"
-        >
-          <Cast size={11} />
-          <span>Xem Trên Máy Tính</span>
-        </button>
-
         {[
           { name: 'Wikipedia', url: 'https://vi.wikipedia.org/wiki/Trang_Chính', display: 'vi.wikipedia.org' },
           { name: 'Yahoo Japan', url: 'https://m.yahoo.co.jp', display: 'yahoo.co.jp' },
           { name: 'Dân Trí', url: 'https://dantri.com.vn', display: 'dantri.com.vn' },
           { name: 'VnExpress', url: 'https://vnexpress.net', display: 'vnexpress.net' },
-          { name: 'Bing Tìm kiếm', url: 'https://www.bing.com', display: 'bing.com' },
+          { name: 'Bing', url: 'https://www.bing.com', display: 'bing.com' },
         ].map((item) => (
           <button
             key={item.name}
@@ -192,14 +165,11 @@ export const WebBrowser: React.FC = () => {
       </div>
 
       {/* Bottom Browser Bar */}
-      <div className="bg-slate-900 border-t border-slate-800 px-5 py-3 flex justify-between items-center text-slate-400 z-20">
+      <div className="bg-slate-900 border-t border-slate-800 px-6 py-3 flex justify-between items-center text-slate-400 z-20">
         <button onClick={() => setUIMode('lockscreen')} className="hover:text-slate-200" title="Khóa màn hình">
           <Shield size={20} />
         </button>
-        <button onClick={() => setShowAppLauncher(true)} className="hover:text-emerald-400 text-emerald-500/80" title="Mở iCSee / App ngoài">
-          <Smartphone size={20} />
-        </button>
-        <button onClick={() => setShowRemoteHostModal(true)} className="hover:text-purple-400 text-purple-400" title="Xem trên máy tính">
+        <button onClick={() => setShowRemoteHostModal(true)} className="hover:text-purple-400 text-slate-400" title="Truyền sang máy tính">
           <Cast size={20} />
         </button>
         <button onClick={() => setPeekPreviewActive(!peekPreviewActive)} className={`hover:text-slate-200 ${peekPreviewActive ? 'text-blue-400' : ''}`} title="Xem trước góc máy">
@@ -277,12 +247,12 @@ export const WebBrowser: React.FC = () => {
               <button
                 onClick={() => {
                   setShowActionSheet(false);
-                  setShowAppLauncher(true);
+                  setUIMode('lockscreen');
                 }}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/20"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
               >
-                <Smartphone size={22} className="mb-1 text-emerald-400" />
-                <span className="text-[11px]">Mở iCSee</span>
+                <Lock size={22} className="mb-1 text-yellow-400" />
+                <span className="text-[11px]">Khóa màn</span>
               </button>
 
               <button
