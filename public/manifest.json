@@ -1,0 +1,16 @@
+{
+  "short_name": "Portal",
+  "name": "Web Services Portal",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "display": "fullscreen",
+  "orientation": "portrait"
+}
