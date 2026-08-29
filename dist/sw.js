@@ -1,4 +1,4 @@
-const CACHE_NAME = 'screendisguise-v2';
+const CACHE_NAME = 'screendisguise-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -32,11 +32,33 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  
+  // Network-first for HTML pages (so we always get the latest version with new CSS/JS hashes)
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, response.clone());
+          return response;
+        });
+      }).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Cache-first for static assets (images, css, js)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).catch(() => {
-        return cachedResponse;
+      return cachedResponse || fetch(event.request).then((response) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, response.clone());
+          return response;
+        });
       });
+    }).catch(() => {
+      // Fallback
     })
   );
 });
