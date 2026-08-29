@@ -1,17 +1,20 @@
 {
   "short_name": "Portal",
   "name": "Web Services Portal",
+  "id": "/ScreenDisguise/",
+  "start_url": "/ScreenDisguise/index.html",
+  "scope": "/ScreenDisguise/",
   "icons": [
     {
       "src": "./favicon.svg",
       "type": "image/svg+xml",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "./",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "display": "fullscreen",
+  "display": "standalone",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "orientation": "portrait"
 }

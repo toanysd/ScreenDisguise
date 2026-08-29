@@ -1,5 +1,4 @@
-// Service Worker for offline PWA support and caching
-const CACHE_NAME = 'screendisguise-v1';
+const CACHE_NAME = 'screendisguise-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
