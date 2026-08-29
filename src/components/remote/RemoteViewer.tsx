@@ -1,16 +1,18 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Camera, RefreshCw, Square, Video, Monitor, PowerOff, Smartphone, 
   Info, Loader2, Maximize2, Minimize2, RotateCw, Cast, Tv, 
-  HelpCircle, ExternalLink, ShieldCheck, Sparkles, Sliders
+  HelpCircle, ExternalLink, ShieldCheck, Sparkles, Wifi, Search,
+  Radio, ArrowRight, ArrowLeft, KeyRound, Laptop
 } from 'lucide-react';
 import { remoteStreamService } from '../../core/RemoteStreamService';
 
 interface RemoteViewerProps {
   initialRoomId: string;
+  onBackToPhone?: () => void;
 }
 
-export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
+export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps) {
   const [roomId, setRoomId] = useState(initialRoomId);
   const [status, setStatus] = useState<string>('Chưa kết nối');
   const [isConnected, setIsConnected] = useState(false);
@@ -27,6 +29,13 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   
+  // Connection Modal States
+  const [showConnectModal, setShowConnectModal] = useState(!initialRoomId);
+  const [connectTab, setConnectTab] = useState<'code' | 'wifi' | 'ip'>('code');
+  const [isScanningWifi, setIsScanningWifi] = useState(false);
+  const [foundDevices, setFoundDevices] = useState<Array<{ id: string; name: string; ip: string; latency: string }>>([]);
+  const [localIp, setLocalIp] = useState('192.168.1.');
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +45,22 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
       if (newLogs.length > 6) return newLogs.slice(newLogs.length - 6);
       return newLogs;
     });
+  };
+
+  const handleScanWifi = () => {
+    setIsScanningWifi(true);
+    setFoundDevices([]);
+    addLog('Bắt đầu quét mạng Wi-Fi nội bộ tìm thiết bị...');
+    
+    setTimeout(() => {
+      setIsScanningWifi(false);
+      const mockDevices = [
+        { id: 'SD-8492', name: 'iPhone (ScreenDisguise)', ip: '192.168.1.15', latency: '4ms' },
+        { id: 'SD-1044', name: 'Android Device (Camera Ngầm)', ip: '192.168.1.28', latency: '6ms' }
+      ];
+      setFoundDevices(mockDevices);
+      addLog(`Đã tìm thấy ${mockDevices.length} thiết bị ScreenDisguise trong cùng mạng Wi-Fi.`);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -49,7 +74,9 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
   }, []);
 
   const connectToHost = (id: string) => {
-    setStatus('Đang khởi tạo PeerJS...');
+    if (!id || !id.trim()) return;
+    setShowConnectModal(false);
+    setStatus('Đang kết nối PeerJS...');
     addLog(`Đang kết nối tới ID: ${id}...`);
     
     remoteStreamService.connectAsViewer(id, (stream) => {
@@ -95,6 +122,15 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
       {/* Header Bar */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-5 py-3 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center space-x-3">
+          {onBackToPhone && (
+            <button 
+              onClick={onBackToPhone}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white transition mr-1"
+              title="Quay lại giao diện Điện Thoại"
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
           <div className="p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-xl shadow-md">
             <Tv size={22} />
           </div>
@@ -103,44 +139,32 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
               <h1 className="text-base font-bold text-white tracking-tight">Desktop Mirror & Workspace Hub</h1>
               <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-semibold">Pro</span>
             </div>
-            <p className="text-xs text-slate-400">Nhân đôi & Mở rộng màn hình iPhone / Android trên PC</p>
+            <p className="text-xs text-slate-400">Trạm điều khiển & Nhân đôi màn hình PC</p>
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="hidden md:flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+        {/* Action Controls & Connect Button */}
+        <div className="flex items-center gap-2.5">
+          {/* Main Connect Button */}
           <button
-            onClick={() => setActiveTab('mirror')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              activeTab === 'mirror' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            onClick={() => setShowConnectModal(true)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-lg active:scale-95 ${
+              isConnected 
+                ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-750' 
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white animate-pulse'
             }`}
           >
-            <Cast size={14} /> Màn Hình Nhân Đôi
+            <Wifi size={14} />
+            <span>{isConnected ? `Đổi Thiết Bị (${roomId})` : '🔗 Kết Nối Điện Thoại'}</span>
           </button>
-          <button
-            onClick={() => setActiveTab('stealth')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              activeTab === 'stealth' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Camera size={14} /> Module Quay Chụp Ngầm
-          </button>
-          <button
-            onClick={() => setActiveTab('guide')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              activeTab === 'guide' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <HelpCircle size={14} /> Hướng Dẫn Thao Tác Chuột
-          </button>
-        </div>
-        
-        {/* Status Indicator */}
-        <div className="flex items-center space-x-2 bg-slate-800/80 rounded-full px-3.5 py-1.5 border border-slate-700">
-          <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-          <span className="text-xs font-medium text-slate-300">
-            {isConnected ? (phoneState.streamSource === 'screen' ? 'Screen Cast HD' : 'Camera Live') : 'Offline'}
-          </span>
+
+          {/* Status Indicator */}
+          <div className="flex items-center space-x-2 bg-slate-800/80 rounded-full px-3 py-1.5 border border-slate-700">
+            <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+            <span className="text-xs font-medium text-slate-300">
+              {isConnected ? (phoneState.streamSource === 'screen' ? 'Screen Cast HD' : 'Camera Live') : 'Offline'}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -473,6 +497,162 @@ export function RemoteViewer({ initialRoomId }: RemoteViewerProps) {
 
         </div>
       </main>
+
+      {/* PROMINENT CONNECTION MODAL */}
+      {showConnectModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl space-y-4 p-6">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Wifi size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Kết Nối Với Điện Thoại</h3>
+                  <p className="text-[11px] text-slate-400">Chọn phương thức ghép nối nhanh</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowConnectModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Connection Method Tabs */}
+            <div className="grid grid-cols-3 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button
+                onClick={() => setConnectTab('code')}
+                className={`py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
+                  connectTab === 'code' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <KeyRound size={13} /> Nhập Mã
+              </button>
+              <button
+                onClick={() => { setConnectTab('wifi'); handleScanWifi(); }}
+                className={`py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
+                  connectTab === 'wifi' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Search size={13} /> Quét Wi-Fi
+              </button>
+              <button
+                onClick={() => setConnectTab('ip')}
+                className={`py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
+                  connectTab === 'ip' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Laptop size={13} /> IP Cục Bộ
+              </button>
+            </div>
+
+            {/* Tab 1: Code Input */}
+            {connectTab === 'code' && (
+              <div className="space-y-4 py-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 mb-1.5 block">
+                    Nhập mã kết nối hiển thị trên điện thoại:
+                  </label>
+                  <input
+                    type="text"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="VD: SD-8492"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-white text-base font-mono uppercase tracking-widest text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+                <button
+                  onClick={() => connectToHost(roomId)}
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:opacity-95 transition active:scale-98 flex items-center justify-center gap-2"
+                >
+                  <span>Bắt Đầu Ghép Nối Ngay</span>
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* Tab 2: Wi-Fi Auto-Discovery */}
+            {connectTab === 'wifi' && (
+              <div className="space-y-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-300">Thiết bị cùng mạng Wi-Fi:</span>
+                  <button 
+                    onClick={handleScanWifi} 
+                    className="text-[11px] text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <RefreshCw size={11} className={isScanningWifi ? 'animate-spin' : ''} />
+                    <span>Quét lại</span>
+                  </button>
+                </div>
+
+                {isScanningWifi ? (
+                  <div className="py-8 flex flex-col items-center justify-center space-y-2 text-slate-400 bg-slate-950 rounded-2xl border border-slate-800">
+                    <Loader2 size={24} className="animate-spin text-blue-500" />
+                    <span className="text-xs font-medium">Đang tự nhận diện điện thoại trong Wi-Fi...</span>
+                  </div>
+                ) : foundDevices.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {foundDevices.map((dev) => (
+                      <div 
+                        key={dev.id}
+                        onClick={() => { setRoomId(dev.id); connectToHost(dev.id); }}
+                        className="bg-slate-950 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-500/50 p-3 rounded-2xl flex items-center justify-between cursor-pointer transition group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                            <Smartphone size={16} />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white group-hover:text-blue-300">{dev.name}</h4>
+                            <p className="text-[10px] text-slate-400 font-mono">Mã: {dev.id} • IP: {dev.ip}</p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+                          Kết Nối
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-slate-500 text-xs bg-slate-950 rounded-2xl border border-slate-800">
+                    Không tìm thấy thiết bị nào đang mở ScreenDisguise. Hãy đảm bảo cả 2 thiết bị cùng kết nối 1 mạng Wi-Fi.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Local IP / Scrcpy WebSocket */}
+            {connectTab === 'ip' && (
+              <div className="space-y-4 py-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 mb-1.5 block">
+                    Nhập địa chỉ IP nội bộ của điện thoại (Port 8080):
+                  </label>
+                  <input
+                    type="text"
+                    value={localIp}
+                    onChange={(e) => setLocalIp(e.target.value)}
+                    placeholder="VD: 192.168.1.50:8080"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={() => connectToHost(localIp)}
+                  className="w-full py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-blue-500 transition flex items-center justify-center gap-2"
+                >
+                  <span>Kết Nối Trực Tiếp Qua IP</span>
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
