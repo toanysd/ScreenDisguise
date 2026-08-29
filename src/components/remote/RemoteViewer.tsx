@@ -28,6 +28,7 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
   const [isRotated, setIsRotated] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   
   // Connection Modal States
   const [showConnectModal, setShowConnectModal] = useState(!initialRoomId);
@@ -38,6 +39,17 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Hook to ensure video element is always linked with mediaStream
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch(e => {
+        console.warn('Auto-play error:', e);
+        addLog(`Đang thử phát video: ${e.message}`);
+      });
+    }
+  }, [mediaStream, isConnected, viewLayout]);
 
   const addLog = (msg: string) => {
     setLogs(prev => {
@@ -81,12 +93,9 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
     
     remoteStreamService.connectAsViewer(id, (stream) => {
       addLog('Đã nhận luồng trực tiếp từ Điện thoại!');
+      setMediaStream(stream);
       setIsConnected(true);
       setStatus('Đã kết nối trực tiếp');
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => addLog(`Lỗi phát video: ${e.message}`));
-      }
     });
 
     remoteStreamService.onStatusChange = (newStatus) => {
@@ -255,7 +264,7 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
 
           {/* Interactive Screen Container */}
           <div className={`w-full flex items-center justify-center transition-all ${
-            viewLayout === 'expand' ? 'h-full max-h-[75vh]' : 'max-w-[340px] aspect-[9/19]'
+            viewLayout === 'expand' ? 'w-full h-[620px] max-h-[82vh]' : 'max-w-[340px] aspect-[9/19]'
           }`}>
             
             {/* Phone Bezel or Cinema Screen Frame */}
