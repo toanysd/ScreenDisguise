@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAppStore, CameraFacing, VideoQuality, DisguiseType } from '../../store/useAppStore';
-import { X, Camera, Mic, Key, Monitor, Video, ShieldCheck, Sun } from 'lucide-react';
+import { useAppStore, CameraFacing, VideoQuality, DisguiseType, StandbyStyle } from '../../store/useAppStore';
+import { X, Camera, Mic, Key, Monitor, Video, ShieldCheck, Sun, Signal, Clock } from 'lucide-react';
 
 export const SettingsModal: React.FC = () => {
   const {
@@ -14,25 +14,39 @@ export const SettingsModal: React.FC = () => {
     setVideoQuality,
     disguiseType,
     setDisguiseType,
+    standbyStyle,
+    setStandbyStyle,
+    carrierName,
+    setCarrierName,
     pinCode,
     setPinCode,
+    vaultPinCode,
+    setVaultPinCode,
     wakeLockAlwaysOn,
     setWakeLockAlwaysOn,
   } = useAppStore();
 
   const [newPin, setNewPin] = useState(pinCode);
+  const [newVaultPin, setNewVaultPin] = useState(vaultPinCode);
+  const [customCarrier, setCustomCarrier] = useState(carrierName);
   const [pinSaved, setPinSaved] = useState(false);
 
   if (!showSettings) return null;
 
-  const handleSavePin = () => {
-    if (/^\d{4}$/.test(newPin)) {
-      setPinCode(newPin);
-      setPinSaved(true);
-      setTimeout(() => setPinSaved(false), 2000);
-    } else {
-      alert('Mã PIN phải gồm đúng 4 chữ số!');
+  const handleSaveSecurity = () => {
+    if (!/^\d{4}$/.test(newPin)) {
+      alert('Mã PIN mở khóa màn hình phải gồm đúng 4 chữ số!');
+      return;
     }
+    if (!/^\d{4}$/.test(newVaultPin)) {
+      alert('Mã kích hoạt Pro / Kho Media phải gồm đúng 4 chữ số!');
+      return;
+    }
+    setPinCode(newPin);
+    setVaultPinCode(newVaultPin);
+    setCarrierName(customCarrier);
+    setPinSaved(true);
+    setTimeout(() => setPinSaved(false), 2000);
   };
 
   return (
@@ -55,6 +69,60 @@ export const SettingsModal: React.FC = () => {
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* Japanese Carrier Selection */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-300 flex items-center">
+            <Signal size={14} className="mr-1.5 text-blue-400" />
+            Nhà mạng hiển thị (Mạng Nhật Bản)
+          </label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {['docomo', 'SoftBank', 'au', 'Rakuten', 'LINE Mobile', 'None'].map((c) => (
+              <button
+                key={c}
+                onClick={() => {
+                  const val = c === 'None' ? '' : c;
+                  setCustomCarrier(val);
+                  setCarrierName(val);
+                }}
+                className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
+                  customCarrier === (c === 'None' ? '' : c)
+                    ? 'bg-blue-600 border-blue-500 text-white'
+                    : 'bg-slate-800 border-slate-700 text-slate-300'
+                }`}
+              >
+                {c === 'None' ? 'Ẩn mạng' : c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Default Standby Style */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-300 flex items-center">
+            <Clock size={14} className="mr-1.5 text-blue-400" />
+            Chế độ màn hình khóa / Chờ
+          </label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { label: 'Khóa chuẩn', value: 'lockscreen' },
+              { label: 'AOD mờ', value: 'aod' },
+              { label: 'Đen OLED', value: 'oled' },
+            ].map((st) => (
+              <button
+                key={st.value}
+                onClick={() => setStandbyStyle(st.value as StandbyStyle)}
+                className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
+                  standbyStyle === st.value
+                    ? 'bg-blue-600 border-blue-500 text-white'
+                    : 'bg-slate-800 border-slate-700 text-slate-300'
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Camera Selection */}
@@ -113,7 +181,7 @@ export const SettingsModal: React.FC = () => {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-300 flex items-center">
             <Video size={14} className="mr-1.5 text-blue-400" />
-            Độ phân giải
+            Độ phân giải video
           </label>
           <div className="grid grid-cols-3 gap-2">
             {(['1080p', '720p', '480p'] as VideoQuality[]).map((q) => (
@@ -176,27 +244,49 @@ export const SettingsModal: React.FC = () => {
           </button>
         </div>
 
-        {/* PIN Code Setting */}
-        <div className="space-y-1.5 pt-2 border-t border-slate-800">
-          <label className="text-xs font-medium text-slate-300 flex items-center">
-            <Key size={14} className="mr-1.5 text-blue-400" />
-            Đổi mã PIN bảo mật (4 số)
-          </label>
-          <div className="flex space-x-2">
+        {/* 2-Tier Security Passcode Section */}
+        <div className="space-y-3 pt-3 border-t border-slate-800">
+          <h4 className="text-xs font-bold text-amber-400 flex items-center">
+            <Key size={14} className="mr-1.5" />
+            Bảo Mật 2 Cấp Mật Khẩu
+          </h4>
+
+          {/* Tier 1 PIN */}
+          <div className="space-y-1">
+            <label className="text-[11px] text-slate-300 flex justify-between">
+              <span>Mã PIN Cấp 1 (Mở khóa màn hình)</span>
+              <span className="text-gray-500">Mặc định: 1234</span>
+            </label>
             <input
               type="password"
               maxLength={4}
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-center text-white font-mono tracking-widest text-sm w-24 outline-none focus:border-blue-500"
+              className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-center text-white font-mono tracking-widest text-sm w-full outline-none focus:border-blue-500"
             />
-            <button
-              onClick={handleSavePin}
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg py-1.5 transition"
-            >
-              {pinSaved ? 'Đã lưu!' : 'Cập nhật PIN'}
-            </button>
           </div>
+
+          {/* Tier 2 PIN */}
+          <div className="space-y-1">
+            <label className="text-[11px] text-amber-300 flex justify-between">
+              <span>Mã Kích Hoạt Cấp 2 (Kho Video / Pro Upgrade)</span>
+              <span className="text-gray-500">Mặc định: 8888</span>
+            </label>
+            <input
+              type="password"
+              maxLength={4}
+              value={newVaultPin}
+              onChange={(e) => setNewVaultPin(e.target.value)}
+              className="bg-slate-800 border border-amber-500/40 rounded-lg px-3 py-1.5 text-center text-amber-300 font-mono tracking-widest text-sm w-full outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <button
+            onClick={handleSaveSecurity}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-semibold rounded-lg py-2 transition"
+          >
+            {pinSaved ? 'Đã lưu cấu hình bảo mật!' : 'Cập nhật Mật khẩu & Nhà mạng'}
+          </button>
         </div>
 
         <button

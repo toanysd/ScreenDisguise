@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { cameraRecorder } from '../../core/CameraRecorder';
 
 export const Calculator: React.FC = () => {
   const [display, setDisplay] = useState('0');
@@ -8,7 +7,7 @@ export const Calculator: React.FC = () => {
   const [operation, setOperation] = useState<string | null>(null);
   const [resetOnNext, setResetOnNext] = useState(false);
 
-  const { pinCode, setUIMode, recordingStatus } = useAppStore();
+  const { vaultPinCode, setUIMode, setShowProUnlock } = useAppStore();
 
   // Secret Triple Tap - Top to Lock Screen
   let topTapCount = 0;
@@ -40,12 +39,14 @@ export const Calculator: React.FC = () => {
   };
 
   const handleEquals = () => {
-    // Secret backdoor trigger: if user typed PIN and hits equals
-    if (display === pinCode) {
+    // Secret trigger: Typing Tier 2 Vault PIN (e.g. 8888) and equals opens Pro Unlock / Vault
+    if (display === vaultPinCode) {
+      setDisplay('0');
       setUIMode('vault');
       return;
     }
     if (display === '9999') {
+      setDisplay('0');
       setUIMode('browser');
       return;
     }

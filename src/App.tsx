@@ -7,6 +7,7 @@ import { WebBrowser } from './components/browser/WebBrowser';
 import { Calculator } from './components/browser/Calculator';
 import { PeekCamera } from './components/browser/PeekCamera';
 import { VideoVault } from './components/vault/VideoVault';
+import { ProUnlockModal } from './components/vault/ProUnlockModal';
 import { SettingsModal } from './components/settings/SettingsModal';
 
 function App() {
@@ -34,11 +35,14 @@ function App() {
       {/* 4. Disguised Calculator */}
       {uiMode === 'calculator' && <Calculator />}
 
-      {/* 5. Secret Encrypted Video Vault */}
+      {/* 5. Secret Encrypted Video Vault (Tier 2 Protected) */}
       {uiMode === 'vault' && <VideoVault />}
 
       {/* Floating Peek Camera View */}
       <PeekCamera />
+
+      {/* Fake Pro Upgrade / Media Vault Passcode Modal */}
+      <ProUnlockModal />
 
       {/* System Settings Modal */}
       <SettingsModal />

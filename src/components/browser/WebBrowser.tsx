@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Folder
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Sparkles
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -18,7 +18,7 @@ export const WebBrowser: React.FC = () => {
     setPeekPreviewActive, 
     peekPreviewActive,
     setShowSettings,
-    vaultCount
+    setShowProUnlock,
   } = useAppStore();
 
   const formatDuration = (seconds: number) => {
@@ -125,6 +125,7 @@ export const WebBrowser: React.FC = () => {
       <div className="bg-slate-950 px-3 py-1.5 flex space-x-2 overflow-x-auto text-[11px] border-b border-slate-800/80 shrink-0">
         {[
           { name: 'Wikipedia', url: 'https://vi.wikipedia.org/wiki/Trang_Chính', display: 'vi.wikipedia.org' },
+          { name: 'Yahoo Japan', url: 'https://m.yahoo.co.jp', display: 'yahoo.co.jp' },
           { name: 'Dân Trí', url: 'https://dantri.com.vn', display: 'dantri.com.vn' },
           { name: 'VnExpress', url: 'https://vnexpress.net', display: 'vnexpress.net' },
           { name: 'Bing Tìm kiếm', url: 'https://www.bing.com', display: 'bing.com' },
@@ -163,13 +164,13 @@ export const WebBrowser: React.FC = () => {
         <button onClick={() => setUIMode('calculator')} className="hover:text-slate-200 text-xs font-mono px-2 py-1 bg-slate-800 rounded" title="Chuyển sang Máy tính">
           CALC
         </button>
-        <button onClick={() => setUIMode('vault')} className="hover:text-slate-200 relative" title="Kho video bí mật">
-          <Folder size={20} />
-          {vaultCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center">
-              {vaultCount}
-            </span>
-          )}
+        {/* Disguised Pro Unlock / Upgrade Button */}
+        <button 
+          onClick={() => setShowProUnlock(true)} 
+          className="hover:text-amber-400 text-amber-500/80 flex items-center space-x-1" 
+          title="Nâng cấp Pro"
+        >
+          <Crown size={19} />
         </button>
         <button onClick={() => setShowActionSheet(true)} className="hover:text-slate-200" title="Tùy chọn">
           <Menu size={20} />
@@ -189,7 +190,7 @@ export const WebBrowser: React.FC = () => {
             <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-2" />
             
             <div className="flex justify-between items-center mb-1">
-              <h3 className="text-sm font-semibold text-white">Bảng điều khiển ngụy trang</h3>
+              <h3 className="text-sm font-semibold text-white">Bảng điều khiển hệ thống</h3>
               {recordingStatus === 'recording' && (
                 <span className="text-xs text-red-400 font-mono flex items-center">
                   <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5 animate-pulse" />
@@ -241,15 +242,16 @@ export const WebBrowser: React.FC = () => {
                 <span className="text-[11px]">Đen OLED</span>
               </button>
 
+              {/* Disguised as Pro Unlock */}
               <button
                 onClick={() => {
                   setShowActionSheet(false);
-                  setUIMode('vault');
+                  setShowProUnlock(true);
                 }}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-amber-500/30 text-amber-300 hover:bg-amber-950/20"
               >
-                <Folder size={22} className="mb-1 text-blue-400" />
-                <span className="text-[11px]">Kho video</span>
+                <Crown size={22} className="mb-1 text-amber-400" />
+                <span className="text-[11px]">Nâng cấp Pro</span>
               </button>
             </div>
 

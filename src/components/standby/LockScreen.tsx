@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
-import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye } from 'lucide-react';
+import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock } from 'lucide-react';
 
 export const LockScreen: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [batteryLevel, setBatteryLevel] = useState<number>(88);
+  const [batteryLevel, setBatteryLevel] = useState<number>(92);
   const [isCharging, setIsCharging] = useState<boolean>(false);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [enteredPin, setEnteredPin] = useState<string>('');
@@ -16,6 +16,10 @@ export const LockScreen: React.FC = () => {
     setUIMode,
     disguiseType,
     pinCode,
+    vaultPinCode,
+    carrierName,
+    standbyStyle,
+    setStandbyStyle,
     recordingStatus,
     recordingDuration,
     setPeekPreviewActive,
@@ -44,11 +48,11 @@ export const LockScreen: React.FC = () => {
   }, []);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('vi-VN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('ja-JP', { hour12: false, hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' });
+    return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' });
   };
 
   const formatDuration = (seconds: number) => {
@@ -57,13 +61,15 @@ export const LockScreen: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Secret Triple Tap - Clock for OLED Black
+  // Secret Triple Tap - Clock to cycle Standby mode (LockScreen -> AOD -> OLED Black)
   let clockTapCount = 0;
   let clockTapTimeout: any = null;
   const handleClockTap = () => {
     clockTapCount++;
     if (clockTapCount >= 3) {
-      setUIMode('oled');
+      if (standbyStyle === 'lockscreen') setStandbyStyle('aod');
+      else if (standbyStyle === 'aod') setUIMode('oled');
+      else setStandbyStyle('lockscreen');
     }
     clearTimeout(clockTapTimeout);
     clockTapTimeout = setTimeout(() => { clockTapCount = 0; }, 1000);
@@ -92,15 +98,10 @@ export const LockScreen: React.FC = () => {
 
       if (newPin.length === 4) {
         if (newPin === pinCode) {
-          // Open disguise workspace
+          // Tier 1 PIN -> Open disguise workspace (Browser or Calculator)
           setShowPinModal(false);
           setEnteredPin('');
           setUIMode(disguiseType);
-        } else if (newPin === '0000') {
-          // Master override to Vault
-          setShowPinModal(false);
-          setEnteredPin('');
-          setUIMode('vault');
         } else {
           setPinError(true);
           setTimeout(() => {
@@ -115,6 +116,31 @@ export const LockScreen: React.FC = () => {
   const handleDelete = () => {
     setEnteredPin((prev) => prev.slice(0, -1));
   };
+
+  // If in AOD (Always-On Display) Standby Mode
+  if (standbyStyle === 'aod') {
+    return (
+      <div 
+        onClick={() => setStandbyStyle('lockscreen')}
+        className="fixed inset-0 bg-black flex flex-col items-center justify-center select-none cursor-pointer z-40"
+      >
+        <div className="flex flex-col items-center opacity-25 hover:opacity-40 transition-opacity duration-300">
+          <h1 className="text-6xl font-extralight tracking-wider text-white font-mono">
+            {formatTime(currentTime)}
+          </h1>
+          <p className="text-xs text-gray-400 mt-2">
+            {formatDate(currentTime)} • {batteryLevel}%
+          </p>
+          {recordingStatus === 'recording' && (
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full mt-3 animate-pulse" />
+          )}
+        </div>
+        <div className="absolute bottom-6 text-[11px] text-gray-700">
+          Chạm để mở khóa
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black text-white flex flex-col justify-between select-none z-40 overflow-hidden">
@@ -132,7 +158,7 @@ export const LockScreen: React.FC = () => {
 
       {/* Status Bar */}
       <div className="w-full flex justify-between items-center px-7 pt-4 text-xs font-medium opacity-80 z-20">
-        <span>VNPT / Viettel</span>
+        <span>{carrierName || 'docomo'}</span>
         <div className="flex items-center space-x-2">
           {recordingStatus === 'recording' && (
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block mr-1" />
@@ -179,11 +205,11 @@ export const LockScreen: React.FC = () => {
       {/* Bottom Actions */}
       <div className="w-full flex justify-between items-center px-8 pb-10">
         <button
-          onClick={() => setUIMode('oled')}
+          onClick={() => setStandbyStyle('aod')}
           className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
-          title="OLED Pure Black"
+          title="Màn hình AOD tiết kiệm pin"
         >
-          <Moon size={20} />
+          <Clock size={19} />
         </button>
 
         <button 
@@ -194,13 +220,11 @@ export const LockScreen: React.FC = () => {
         </button>
 
         <button
-          onClick={handleRecTap}
-          className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md transition ${
-            recordingStatus === 'recording' ? 'bg-red-600 text-white' : 'bg-white/10 text-white/80 active:bg-white/30'
-          }`}
-          title="Ghi hình nhanh"
+          onClick={() => setUIMode('oled')}
+          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
+          title="Màn hình đen OLED tuyệt đối"
         >
-          <span className={`w-4 h-4 rounded-sm ${recordingStatus === 'recording' ? 'bg-white' : 'bg-red-500 rounded-full'}`} />
+          <Moon size={19} />
         </button>
       </div>
 
@@ -209,13 +233,13 @@ export const LockScreen: React.FC = () => {
         <div className="w-36 h-1 bg-white/30 rounded-full" />
       </div>
 
-      {/* PIN Keypad Modal */}
+      {/* PIN Keypad Modal (Tier 1: Workspace Unlock) */}
       {showPinModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex flex-col justify-between py-12 px-8 z-50 animate-fade-in">
           <div className="flex flex-col items-center pt-8">
             <Unlock size={28} className="text-white/80 mb-4" />
             <h2 className="text-lg font-medium text-white mb-2">Nhập mã PIN</h2>
-            <p className="text-xs text-gray-400 mb-6">Nhập mật mã để mở giao diện làm việc</p>
+            <p className="text-xs text-gray-400 mb-6">Nhập mật mã để vào màn hình làm việc</p>
 
             {/* PIN Dots */}
             <div className={`flex space-x-5 mb-8 ${pinError ? 'animate-bounce text-red-500' : ''}`}>
@@ -237,7 +261,7 @@ export const LockScreen: React.FC = () => {
               <button
                 key={num}
                 onClick={() => handleKeyPress(num)}
-                className="w-18 h-18 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-light text-white flex items-center justify-center transition"
+                className="rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-light text-white flex items-center justify-center transition"
                 style={{ width: '70px', height: '70px' }}
               >
                 {num}
@@ -252,7 +276,7 @@ export const LockScreen: React.FC = () => {
             </button>
             <button
               onClick={() => handleKeyPress('0')}
-              className="w-18 h-18 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-light text-white flex items-center justify-center transition"
+              className="rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-2xl font-light text-white flex items-center justify-center transition"
               style={{ width: '70px', height: '70px' }}
             >
               0
