@@ -1,126 +1,97 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { useAppStore } from '../../store/useAppStore';
+import { X, Copy, Monitor, ShieldAlert, Smartphone } from 'lucide-react';
 import { remoteStreamService } from '../../core/RemoteStreamService';
-import { X, Cast, Copy, Check, Monitor, Moon, Shield, Radio, Video } from 'lucide-react';
 
-export const RemoteHostModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function RemoteHostModal({ isOpen, onClose }: Props) {
   const [roomId, setRoomId] = useState<string>('');
-  const [copied, setCopied] = useState<boolean>(false);
-  const [isViewerConnected, setIsViewerConnected] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const { setUIMode } = useAppStore();
+  const [status, setStatus] = useState<string>('Đang khởi tạo Server...');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setLoading(true);
-      remoteStreamService
-        .initHost(
-          () => setIsViewerConnected(true),
-          () => setIsViewerConnected(false)
-        )
-        .then((id) => {
-          setRoomId(id);
-          setLoading(false);
-        });
+      startHost();
     }
   }, [isOpen]);
 
+  const startHost = () => {
+    setStatus('Đang khởi tạo P2P Server...');
+    remoteStreamService.initializeAsHost((id) => {
+      setRoomId(id);
+      setStatus('Đang chờ PC kết nối tới...');
+    });
+
+    remoteStreamService.onStatusChange = (newStatus) => {
+      setStatus(newStatus);
+    };
+  };
+
   if (!isOpen) return null;
 
-  const currentOrigin = window.location.origin + window.location.pathname;
-  const directViewerUrl = `${currentOrigin}?view=${roomId}`;
+  const remoteUrl = `${window.location.origin}${window.location.pathname}?view=${roomId}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(directViewerUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const copyLink = () => {
+    navigator.clipboard.writeText(remoteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-9 h-9 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
-              <Cast size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">Xem Màn Hình Từ Máy Tính</h3>
-              <p className="text-[10px] text-slate-400">Truyền luồng trực tiếp sang PC qua WebRTC</p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800/60"
-          >
-            <X size={18} />
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/50">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Monitor size={20} className="text-blue-400" /> PC Remote Hub
+          </h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-full">
+            <X size={20} />
           </button>
         </div>
-
-        {/* Status Indicator */}
-        <div className={`p-3 rounded-2xl border flex items-center justify-between ${
-          isViewerConnected
-            ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300'
-            : 'bg-purple-950/40 border-purple-500/30 text-purple-300'
-        }`}>
-          <div className="flex items-center space-x-2">
-            <Radio size={16} className={isViewerConnected ? 'animate-pulse text-emerald-400' : 'text-purple-400'} />
-            <span className="text-xs font-semibold">
-              {isViewerConnected ? 'Máy tính ĐÃ KẾT NỐI & Đang xem!' : 'Đang phát tín hiệu chờ máy tính...'}
-            </span>
+        
+        <div className="p-6 space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4 ring-4 ring-blue-500/5">
+              <Smartphone className="w-8 h-8 text-blue-400" />
+            </div>
+            <p className="text-sm text-slate-300 font-medium">{status}</p>
           </div>
-        </div>
+          
+          {roomId && (
+            <div className="space-y-3">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
+                <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider mb-1">Mã Kết Nối Của Bạn</p>
+                <p className="text-2xl font-mono text-white font-bold tracking-widest">{roomId}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400 text-center">Hoặc gửi link này qua Zalo/Máy tính để mở nhanh:</p>
+                <div className="flex bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+                  <div className="flex-1 px-3 py-2 text-xs text-slate-400 font-mono truncate select-all flex items-center">
+                    {remoteUrl}
+                  </div>
+                  <button 
+                    onClick={copyLink}
+                    className={`px-4 flex items-center justify-center border-l border-slate-800 transition-colors ${copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                  >
+                    <Copy size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Room Code Card */}
-        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center space-y-2">
-          <span className="text-[11px] text-slate-400 uppercase tracking-wider font-medium">Mã Kết Nối Phòng (Room Code)</span>
-          <div className="text-3xl font-mono font-bold text-white tracking-widest py-1">
-            {loading ? '...' : roomId}
+          <div className="bg-rose-500/10 rounded-lg p-3 flex items-start gap-3 border border-rose-500/20">
+            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-rose-300/80 leading-relaxed">
+              Hãy giữ màn hình điện thoại ở ứng dụng này. PC có thể xem luồng camera và ấn nút tắt đen màn hình điện thoại từ xa.
+            </p>
           </div>
-          <p className="text-[10px] text-slate-500">Mở link này trên trình duyệt máy tính của bạn:</p>
-
-          <div className="flex items-center space-x-2 bg-slate-900 rounded-xl p-2 border border-slate-800">
-            <input
-              type="text"
-              readOnly
-              value={directViewerUrl}
-              className="bg-transparent text-[10px] text-slate-300 flex-1 outline-none truncate font-mono"
-            />
-            <button
-              onClick={handleCopy}
-              className="p-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs flex items-center space-x-1 shrink-0 transition"
-              title="Sao chép link"
-            >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              <span className="text-[10px]">{copied ? 'Đã chép' : 'Chép'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick stealth action */}
-        <div className="space-y-2 pt-1">
-          <p className="text-[11px] text-slate-400">Sau khi máy tính kết nối, bạn có thể chuyển điện thoại sang màn hình đen:</p>
-          <button
-            onClick={() => {
-              onClose();
-              setUIMode('oled');
-            }}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium flex items-center justify-center space-x-2 border border-slate-700 transition"
-          >
-            <Moon size={15} className="text-purple-400" />
-            <span>Tắt Màn Hình Điện Thoại (Đen OLED) & Tiếp tục phát</span>
-          </button>
         </div>
       </div>
     </div>
   );
-};
+}
