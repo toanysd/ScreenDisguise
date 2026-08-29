@@ -18,10 +18,12 @@ interface AppState {
   pinCode: string;             // Tier 1: Lockscreen unlock PIN (default: 1234)
   vaultPinCode: string;        // Tier 2: Pro Upgrade / Media Vault License PIN (default: 8888)
   carrierName: string;         // e.g. docomo, SoftBank, au, Rakuten
+  favoriteAppPackage: string;  // e.g. com.xm.csee (iCSee)
   wakeLockAlwaysOn: boolean;
   peekPreviewActive: boolean;
   showSettings: boolean;
   showProUnlock: boolean;
+  showAppLauncher: boolean;
   isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
@@ -36,10 +38,12 @@ interface AppState {
   setPinCode: (pin: string) => void;
   setVaultPinCode: (pin: string) => void;
   setCarrierName: (carrier: string) => void;
+  setFavoriteAppPackage: (pkg: string) => void;
   setWakeLockAlwaysOn: (enabled: boolean) => void;
   setPeekPreviewActive: (active: boolean) => void;
   setShowSettings: (show: boolean) => void;
   setShowProUnlock: (show: boolean) => void;
+  setShowAppLauncher: (show: boolean) => void;
   setIsFullscreen: (full: boolean) => void;
   setRecordingDuration: (duration: number | ((prev: number) => number)) => void;
   setVaultCount: (count: number) => void;
@@ -56,10 +60,12 @@ export const useAppStore = create<AppState>((set) => ({
   pinCode: localStorage.getItem('sd_pin') || '1234',
   vaultPinCode: localStorage.getItem('sd_vault_pin') || '8888',
   carrierName: localStorage.getItem('sd_carrier') || 'docomo',
+  favoriteAppPackage: localStorage.getItem('sd_fav_app') || 'com.xm.csee',
   wakeLockAlwaysOn: true,
   peekPreviewActive: false,
   showSettings: false,
   showProUnlock: false,
+  showAppLauncher: false,
   isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
@@ -83,10 +89,15 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('sd_carrier', carrier);
     set({ carrierName: carrier });
   },
+  setFavoriteAppPackage: (pkg) => {
+    localStorage.setItem('sd_fav_app', pkg);
+    set({ favoriteAppPackage: pkg });
+  },
   setWakeLockAlwaysOn: (enabled) => set({ wakeLockAlwaysOn: enabled }),
   setPeekPreviewActive: (active) => set({ peekPreviewActive: active }),
   setShowSettings: (show) => set({ showSettings: show }),
   setShowProUnlock: (show) => set({ showProUnlock: show }),
+  setShowAppLauncher: (show) => set({ showAppLauncher: show }),
   setIsFullscreen: (full) => set({ isFullscreen: full }),
   setRecordingDuration: (duration) =>
     set((state) => ({

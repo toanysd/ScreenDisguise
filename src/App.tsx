@@ -8,6 +8,7 @@ import { Calculator } from './components/browser/Calculator';
 import { PeekCamera } from './components/browser/PeekCamera';
 import { VideoVault } from './components/vault/VideoVault';
 import { ProUnlockModal } from './components/vault/ProUnlockModal';
+import { AppLauncherModal } from './components/browser/AppLauncherModal';
 import { SettingsModal } from './components/settings/SettingsModal';
 
 function App() {
@@ -41,8 +42,11 @@ function App() {
       {/* Floating Peek Camera View */}
       <PeekCamera />
 
-      {/* Fake Pro Upgrade / Media Vault Passcode Modal */}
+      {/* Disguised Pro Upgrade / Media Vault Passcode Modal */}
       <ProUnlockModal />
+
+      {/* App Launcher Modal (iCSee, XMEye, Camera, etc.) */}
+      <AppLauncherModal />
 
       {/* System Settings Modal */}
       <SettingsModal />

@@ -4,7 +4,7 @@ import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize 
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Smartphone, ExternalLink 
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -20,6 +20,7 @@ export const WebBrowser: React.FC = () => {
     peekPreviewActive,
     setShowSettings,
     setShowProUnlock,
+    setShowAppLauncher,
     isFullscreen,
   } = useAppStore();
 
@@ -132,7 +133,16 @@ export const WebBrowser: React.FC = () => {
       </div>
 
       {/* Quick Bookmarks / Chips */}
-      <div className="bg-slate-950 px-3 py-1.5 flex space-x-2 overflow-x-auto text-[11px] border-b border-slate-800/80 shrink-0">
+      <div className="bg-slate-950 px-3 py-1.5 flex space-x-2 overflow-x-auto text-[11px] border-b border-slate-800/80 shrink-0 items-center">
+        {/* Quick App Launcher Chip */}
+        <button
+          onClick={() => setShowAppLauncher(true)}
+          className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-full text-emerald-300 whitespace-nowrap active:scale-95 transition flex items-center space-x-1 shrink-0 font-medium"
+        >
+          <Smartphone size={11} />
+          <span>Mở iCSee / App Cam</span>
+        </button>
+
         {[
           { name: 'Wikipedia', url: 'https://vi.wikipedia.org/wiki/Trang_Chính', display: 'vi.wikipedia.org' },
           { name: 'Yahoo Japan', url: 'https://m.yahoo.co.jp', display: 'yahoo.co.jp' },
@@ -146,7 +156,7 @@ export const WebBrowser: React.FC = () => {
               setInputUrl(item.display);
               setCurrentUrl(`https://corsproxy.io/?url=${encodeURIComponent(item.url)}`);
             }}
-            className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-300 whitespace-nowrap active:scale-95 transition"
+            className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 rounded-full text-slate-300 whitespace-nowrap active:scale-95 transition shrink-0"
           >
             {item.name}
           </button>
@@ -164,9 +174,12 @@ export const WebBrowser: React.FC = () => {
       </div>
 
       {/* Bottom Browser Bar */}
-      <div className="bg-slate-900 border-t border-slate-800 px-6 py-3 flex justify-between items-center text-slate-400 z-20">
+      <div className="bg-slate-900 border-t border-slate-800 px-5 py-3 flex justify-between items-center text-slate-400 z-20">
         <button onClick={() => setUIMode('lockscreen')} className="hover:text-slate-200" title="Khóa màn hình">
           <Shield size={20} />
+        </button>
+        <button onClick={() => setShowAppLauncher(true)} className="hover:text-emerald-400 text-emerald-500/80" title="Mở iCSee / App ngoài">
+          <Smartphone size={20} />
         </button>
         <button onClick={() => setPeekPreviewActive(!peekPreviewActive)} className={`hover:text-slate-200 ${peekPreviewActive ? 'text-blue-400' : ''}`} title="Xem trước góc máy">
           <Eye size={20} />
@@ -232,23 +245,23 @@ export const WebBrowser: React.FC = () => {
               <button
                 onClick={() => {
                   setShowActionSheet(false);
+                  setShowAppLauncher(true);
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/20"
+              >
+                <Smartphone size={22} className="mb-1 text-emerald-400" />
+                <span className="text-[11px]">Mở iCSee</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowActionSheet(false);
                   setUIMode('lockscreen');
                 }}
                 className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
               >
                 <Lock size={22} className="mb-1 text-yellow-400" />
                 <span className="text-[11px]">Khóa màn</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowActionSheet(false);
-                  setUIMode('oled');
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
-              >
-                <Moon size={22} className="mb-1 text-purple-400" />
-                <span className="text-[11px]">Đen OLED</span>
               </button>
 
               <button
