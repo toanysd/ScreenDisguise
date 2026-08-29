@@ -1,10 +1,10 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Smartphone, ExternalLink 
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Smartphone, Cast 
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -21,6 +21,7 @@ export const WebBrowser: React.FC = () => {
     setShowSettings,
     setShowProUnlock,
     setShowAppLauncher,
+    setShowRemoteHostModal,
     isFullscreen,
   } = useAppStore();
 
@@ -114,6 +115,14 @@ export const WebBrowser: React.FC = () => {
         </form>
 
         <button 
+          onClick={() => setShowRemoteHostModal(true)}
+          className="text-purple-400 hover:text-purple-300 p-1.5 rounded-md hover:bg-slate-800"
+          title="Xem từ máy tính (Cast to PC)"
+        >
+          <Cast size={18} />
+        </button>
+
+        <button 
           onClick={() => fullscreenManager.toggle()}
           className="text-slate-400 p-1.5 rounded-md hover:text-slate-200 active:bg-slate-800"
           title="Toàn màn hình"
@@ -140,7 +149,16 @@ export const WebBrowser: React.FC = () => {
           className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-full text-emerald-300 whitespace-nowrap active:scale-95 transition flex items-center space-x-1 shrink-0 font-medium"
         >
           <Smartphone size={11} />
-          <span>Mở iCSee / App Cam</span>
+          <span>Mở iCSee</span>
+        </button>
+
+        {/* Quick Cast to PC Chip */}
+        <button
+          onClick={() => setShowRemoteHostModal(true)}
+          className="px-2.5 py-1 bg-purple-950/80 hover:bg-purple-900/80 border border-purple-500/40 rounded-full text-purple-300 whitespace-nowrap active:scale-95 transition flex items-center space-x-1 shrink-0 font-medium"
+        >
+          <Cast size={11} />
+          <span>Xem Trên Máy Tính</span>
         </button>
 
         {[
@@ -180,6 +198,9 @@ export const WebBrowser: React.FC = () => {
         </button>
         <button onClick={() => setShowAppLauncher(true)} className="hover:text-emerald-400 text-emerald-500/80" title="Mở iCSee / App ngoài">
           <Smartphone size={20} />
+        </button>
+        <button onClick={() => setShowRemoteHostModal(true)} className="hover:text-purple-400 text-purple-400" title="Xem trên máy tính">
+          <Cast size={20} />
         </button>
         <button onClick={() => setPeekPreviewActive(!peekPreviewActive)} className={`hover:text-slate-200 ${peekPreviewActive ? 'text-blue-400' : ''}`} title="Xem trước góc máy">
           <Eye size={20} />
@@ -245,23 +266,23 @@ export const WebBrowser: React.FC = () => {
               <button
                 onClick={() => {
                   setShowActionSheet(false);
+                  setShowRemoteHostModal(true);
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-purple-500/40 text-purple-300 hover:bg-purple-950/20"
+              >
+                <Cast size={22} className="mb-1 text-purple-400" />
+                <span className="text-[11px]">Xem Trên PC</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowActionSheet(false);
                   setShowAppLauncher(true);
                 }}
                 className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/20"
               >
                 <Smartphone size={22} className="mb-1 text-emerald-400" />
                 <span className="text-[11px]">Mở iCSee</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowActionSheet(false);
-                  setUIMode('lockscreen');
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200"
-              >
-                <Lock size={22} className="mb-1 text-yellow-400" />
-                <span className="text-[11px]">Khóa màn</span>
               </button>
 
               <button

@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 
 export type UIMode = 'lockscreen' | 'oled' | 'browser' | 'calculator' | 'vault';
 export type DisguiseType = 'browser' | 'calculator';
@@ -24,6 +24,7 @@ interface AppState {
   showSettings: boolean;
   showProUnlock: boolean;
   showAppLauncher: boolean;
+  showRemoteHostModal: boolean;
   isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
@@ -44,6 +45,7 @@ interface AppState {
   setShowSettings: (show: boolean) => void;
   setShowProUnlock: (show: boolean) => void;
   setShowAppLauncher: (show: boolean) => void;
+  setShowRemoteHostModal: (show: boolean) => void;
   setIsFullscreen: (full: boolean) => void;
   setRecordingDuration: (duration: number | ((prev: number) => number)) => void;
   setVaultCount: (count: number) => void;
@@ -66,6 +68,7 @@ export const useAppStore = create<AppState>((set) => ({
   showSettings: false,
   showProUnlock: false,
   showAppLauncher: false,
+  showRemoteHostModal: false,
   isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
@@ -98,6 +101,7 @@ export const useAppStore = create<AppState>((set) => ({
   setShowSettings: (show) => set({ showSettings: show }),
   setShowProUnlock: (show) => set({ showProUnlock: show }),
   setShowAppLauncher: (show) => set({ showAppLauncher: show }),
+  setShowRemoteHostModal: (show) => set({ showRemoteHostModal: show }),
   setIsFullscreen: (full) => set({ isFullscreen: full }),
   setRecordingDuration: (duration) =>
     set((state) => ({

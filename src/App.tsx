@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { wakeLockManager } from './core/WakeLockManager';
 import { LockScreen } from './components/standby/LockScreen';
@@ -9,10 +9,31 @@ import { PeekCamera } from './components/browser/PeekCamera';
 import { VideoVault } from './components/vault/VideoVault';
 import { ProUnlockModal } from './components/vault/ProUnlockModal';
 import { AppLauncherModal } from './components/browser/AppLauncherModal';
+import { RemoteHostModal } from './components/remote/RemoteHostModal';
+import { RemoteViewer } from './components/remote/RemoteViewer';
 import { SettingsModal } from './components/settings/SettingsModal';
 
 function App() {
-  const { uiMode, wakeLockAlwaysOn, recordingStatus } = useAppStore();
+  const { 
+    uiMode, 
+    wakeLockAlwaysOn, 
+    recordingStatus,
+    showRemoteHostModal,
+    setShowRemoteHostModal 
+  } = useAppStore();
+
+  const [viewerRoomId, setViewerRoomId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check URL parameters for PC Remote Viewer mode
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view') || params.get('connect');
+    const isViewer = params.get('viewer') === '1' || viewParam !== null;
+
+    if (isViewer) {
+      setViewerRoomId(viewParam || '');
+    }
+  }, []);
 
   useEffect(() => {
     if (wakeLockAlwaysOn || recordingStatus === 'recording') {
@@ -21,6 +42,11 @@ function App() {
       wakeLockManager.release();
     }
   }, [wakeLockAlwaysOn, recordingStatus]);
+
+  // If in PC Remote Viewer Mode -> Render Remote Dashboard
+  if (viewerRoomId !== null) {
+    return <RemoteViewer initialRoomId={viewerRoomId} />;
+  }
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-black text-white">
@@ -47,6 +73,12 @@ function App() {
 
       {/* App Launcher Modal (iCSee, XMEye, Camera, etc.) */}
       <AppLauncherModal />
+
+      {/* Remote Cast to PC Host Modal */}
+      <RemoteHostModal 
+        isOpen={showRemoteHostModal} 
+        onClose={() => setShowRemoteHostModal(false)} 
+      />
 
       {/* System Settings Modal */}
       <SettingsModal />
