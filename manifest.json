@@ -1,9 +1,9 @@
 {
-  "short_name": "Portal",
-  "name": "Web Services Portal",
+  "short_name": "Trình Duyệt",
+  "name": "Trình Duyệt",
   "id": "/ScreenDisguise/",
-  "start_url": "/ScreenDisguise/index.html",
-  "scope": "/ScreenDisguise/",
+  "start_url": "./index.html",
+  "scope": "./",
   "icons": [
     {
       "src": "./favicon.svg",
