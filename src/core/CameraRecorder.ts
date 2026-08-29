@@ -33,16 +33,34 @@ class CameraRecorder {
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
       return true;
     } catch (err) {
-      console.error('Camera init error, attempting fallback without resolution constraints:', err);
+      console.warn('Camera init error with resolution, attempting fallback 1 (without resolution constraints):', err);
       try {
         this.stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: facing },
           audio: audio,
         });
         return true;
-      } catch (fallbackErr) {
-        console.error('Camera fallback error:', fallbackErr);
-        return false;
+      } catch (fallbackErr1) {
+        console.warn('Camera fallback 1 failed, attempting fallback 2 (video only, no audio):', fallbackErr1);
+        try {
+          this.stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facing },
+            audio: false,
+          });
+          return true;
+        } catch (fallbackErr2) {
+          console.warn('Camera fallback 2 failed, attempting fallback 3 (basic generic video):', fallbackErr2);
+          try {
+            this.stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: false,
+            });
+            return true;
+          } catch (finalErr) {
+            console.error('All camera initialization fallbacks failed:', finalErr);
+            return false;
+          }
+        }
       }
     }
   }

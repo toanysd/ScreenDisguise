@@ -28,6 +28,7 @@ interface AppState {
   isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
+  theme: 'light' | 'dark';
 
   setUIMode: (mode: UIMode) => void;
   setDisguiseType: (type: DisguiseType) => void;
@@ -49,6 +50,7 @@ interface AppState {
   setIsFullscreen: (full: boolean) => void;
   setRecordingDuration: (duration: number | ((prev: number) => number)) => void;
   setVaultCount: (count: number) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -72,6 +74,7 @@ export const useAppStore = create<AppState>((set) => ({
   isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
+  theme: (localStorage.getItem('sd_theme') as 'light' | 'dark') || 'light',
 
   setUIMode: (mode) => set({ uiMode: mode }),
   setDisguiseType: (type) => set({ disguiseType: type }),
@@ -108,4 +111,8 @@ export const useAppStore = create<AppState>((set) => ({
       recordingDuration: typeof duration === 'function' ? duration(state.recordingDuration) : duration,
     })),
   setVaultCount: (count) => set({ vaultCount: count }),
+  setTheme: (theme) => {
+    localStorage.setItem('sd_theme', theme);
+    set({ theme });
+  },
 }));
