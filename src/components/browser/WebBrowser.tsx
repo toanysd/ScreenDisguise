@@ -1,9 +1,10 @@
 ﻿import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
+import { fullscreenManager } from '../../core/FullscreenManager';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Sparkles
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize 
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -19,6 +20,7 @@ export const WebBrowser: React.FC = () => {
     peekPreviewActive,
     setShowSettings,
     setShowProUnlock,
+    isFullscreen,
   } = useAppStore();
 
   const formatDuration = (seconds: number) => {
@@ -71,7 +73,7 @@ export const WebBrowser: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-900 text-slate-100 select-none overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 select-none overflow-hidden">
       {/* Hidden secret touch zones */}
       <div 
         className="absolute top-0 left-0 w-16 h-14 z-50 bg-transparent"
@@ -111,6 +113,14 @@ export const WebBrowser: React.FC = () => {
         </form>
 
         <button 
+          onClick={() => fullscreenManager.toggle()}
+          className="text-slate-400 p-1.5 rounded-md hover:text-slate-200 active:bg-slate-800"
+          title="Toàn màn hình"
+        >
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        </button>
+
+        <button 
           onClick={() => setShowActionSheet(true)}
           className="text-slate-400 p-1.5 rounded-md hover:text-slate-200 active:bg-slate-800 relative"
         >
@@ -144,10 +154,10 @@ export const WebBrowser: React.FC = () => {
       </div>
 
       {/* Main Web Content Iframe */}
-      <div className="flex-1 w-full bg-white relative overflow-hidden">
+      <div className="flex-1 w-full bg-black relative overflow-hidden">
         <iframe
           src={currentUrl}
-          className="w-full h-full border-none"
+          className="w-full h-full border-0 outline-none"
           sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
           title="Disguised Web Content"
         />
@@ -164,7 +174,6 @@ export const WebBrowser: React.FC = () => {
         <button onClick={() => setUIMode('calculator')} className="hover:text-slate-200 text-xs font-mono px-2 py-1 bg-slate-800 rounded" title="Chuyển sang Máy tính">
           CALC
         </button>
-        {/* Disguised Pro Unlock / Upgrade Button */}
         <button 
           onClick={() => setShowProUnlock(true)} 
           className="hover:text-amber-400 text-amber-500/80 flex items-center space-x-1" 
@@ -242,7 +251,6 @@ export const WebBrowser: React.FC = () => {
                 <span className="text-[11px]">Đen OLED</span>
               </button>
 
-              {/* Disguised as Pro Unlock */}
               <button
                 onClick={() => {
                   setShowActionSheet(false);
@@ -259,16 +267,26 @@ export const WebBrowser: React.FC = () => {
               <button
                 onClick={() => {
                   setShowActionSheet(false);
+                  fullscreenManager.toggle();
+                }}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs flex items-center justify-center space-x-1.5"
+              >
+                {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+                <span>{isFullscreen ? 'Thu nhỏ' : 'Toàn màn hình'}</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowActionSheet(false);
                   setShowSettings(true);
                 }}
                 className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs flex items-center justify-center space-x-1.5"
               >
                 <Settings size={15} />
-                <span>Cài đặt hệ thống</span>
+                <span>Cài đặt</span>
               </button>
               <button
                 onClick={() => setShowActionSheet(false)}
-                className="py-2.5 px-5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs"
+                className="py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs"
               >
                 Đóng
               </button>

@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
-import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock } from 'lucide-react';
+import { fullscreenManager } from '../../core/FullscreenManager';
+import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock, Maximize, Minimize } from 'lucide-react';
 
 export const LockScreen: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -16,7 +17,6 @@ export const LockScreen: React.FC = () => {
     setUIMode,
     disguiseType,
     pinCode,
-    vaultPinCode,
     carrierName,
     standbyStyle,
     setStandbyStyle,
@@ -24,10 +24,18 @@ export const LockScreen: React.FC = () => {
     recordingDuration,
     setPeekPreviewActive,
     peekPreviewActive,
+    isFullscreen,
+    setIsFullscreen,
   } = useAppStore();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    const onFullscreenChange = () => {
+      setIsFullscreen(fullscreenManager.isFullscreen());
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
     // Battery Status API
     if ('getBattery' in navigator) {
@@ -44,7 +52,11 @@ export const LockScreen: React.FC = () => {
       }).catch(() => {});
     }
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+    };
   }, []);
 
   const formatTime = (date: Date) => {
@@ -61,7 +73,13 @@ export const LockScreen: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Secret Triple Tap - Clock to cycle Standby mode (LockScreen -> AOD -> OLED Black)
+  const handleGlobalTouch = () => {
+    if (!fullscreenManager.isFullscreen()) {
+      fullscreenManager.request();
+    }
+  };
+
+  // Secret Triple Tap - Clock to cycle Standby mode
   let clockTapCount = 0;
   let clockTapTimeout: any = null;
   const handleClockTap = () => {
@@ -91,6 +109,11 @@ export const LockScreen: React.FC = () => {
     recTapTimeout = setTimeout(() => { recTapCount = 0; }, 1000);
   };
 
+  const handleOpenPinModal = () => {
+    handleGlobalTouch();
+    setShowPinModal(true);
+  };
+
   const handleKeyPress = (num: string) => {
     if (enteredPin.length < 4) {
       const newPin = enteredPin + num;
@@ -98,7 +121,6 @@ export const LockScreen: React.FC = () => {
 
       if (newPin.length === 4) {
         if (newPin === pinCode) {
-          // Tier 1 PIN -> Open disguise workspace (Browser or Calculator)
           setShowPinModal(false);
           setEnteredPin('');
           setUIMode(disguiseType);
@@ -121,7 +143,10 @@ export const LockScreen: React.FC = () => {
   if (standbyStyle === 'aod') {
     return (
       <div 
-        onClick={() => setStandbyStyle('lockscreen')}
+        onClick={() => {
+          handleGlobalTouch();
+          setStandbyStyle('lockscreen');
+        }}
         className="fixed inset-0 bg-black flex flex-col items-center justify-center select-none cursor-pointer z-40"
       >
         <div className="flex flex-col items-center opacity-25 hover:opacity-40 transition-opacity duration-300">
@@ -143,26 +168,47 @@ export const LockScreen: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black text-white flex flex-col justify-between select-none z-40 overflow-hidden">
+    <div 
+      onClick={handleGlobalTouch}
+      className="fixed inset-0 bg-black text-white flex flex-col justify-between select-none z-40 overflow-hidden"
+    >
       {/* Hidden touch area for record toggle (Top Right) */}
       <div 
         className="absolute top-0 right-0 w-20 h-20 z-50 bg-transparent"
-        onClick={handleRecTap}
+        onClick={(e) => { e.stopPropagation(); handleRecTap(); }}
       />
 
       {/* Hidden touch area for OLED mode (Top Left) */}
       <div 
         className="absolute top-0 left-0 w-20 h-20 z-50 bg-transparent"
-        onClick={() => setUIMode('oled')}
+        onClick={(e) => { e.stopPropagation(); setUIMode('oled'); }}
       />
 
+      {/* Top Banner if not fullscreen */}
+      {!isFullscreen && (
+        <div 
+          onClick={(e) => { e.stopPropagation(); fullscreenManager.request(); }}
+          className="w-full bg-blue-600/30 hover:bg-blue-600/50 border-b border-blue-500/30 py-1.5 px-4 text-center text-xs text-blue-200 cursor-pointer flex items-center justify-center space-x-1.5 transition z-30"
+        >
+          <Maximize size={12} />
+          <span>Chạm vào đây để Bật Toàn Màn Hình (Ẩn viền trình duyệt)</span>
+        </div>
+      )}
+
       {/* Status Bar */}
-      <div className="w-full flex justify-between items-center px-7 pt-4 text-xs font-medium opacity-80 z-20">
+      <div className="w-full flex justify-between items-center px-7 pt-3 text-xs font-medium opacity-80 z-20">
         <span>{carrierName || 'docomo'}</span>
         <div className="flex items-center space-x-2">
           {recordingStatus === 'recording' && (
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block mr-1" />
           )}
+          <button 
+            onClick={(e) => { e.stopPropagation(); fullscreenManager.toggle(); }} 
+            className="opacity-60 hover:opacity-100 p-0.5" 
+            title="Bật/Tắt Toàn màn hình"
+          >
+            {isFullscreen ? <Minimize size={13} /> : <Maximize size={13} />}
+          </button>
           <Wifi size={14} />
           <div className="flex items-center space-x-1">
             <span>{batteryLevel}%</span>
@@ -172,15 +218,15 @@ export const LockScreen: React.FC = () => {
       </div>
 
       {/* Main Lock Screen Content */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-16">
+      <div className="flex-1 flex flex-col items-center justify-start pt-14">
         <div 
-          onClick={() => setShowPinModal(true)}
+          onClick={(e) => { e.stopPropagation(); handleOpenPinModal(); }}
           className="cursor-pointer flex flex-col items-center group transition active:scale-95"
         >
           <Lock size={22} className="opacity-70 mb-3" />
         </div>
 
-        <div onClick={handleClockTap} className="flex flex-col items-center cursor-pointer">
+        <div onClick={(e) => { e.stopPropagation(); handleClockTap(); }} className="flex flex-col items-center cursor-pointer">
           <h1 className="text-7xl font-extralight tracking-tight font-sans">
             {formatTime(currentTime)}
           </h1>
@@ -192,7 +238,7 @@ export const LockScreen: React.FC = () => {
         {/* Recording status pill (if recording) */}
         {recordingStatus === 'recording' && (
           <div 
-            onClick={() => setPeekPreviewActive(!peekPreviewActive)}
+            onClick={(e) => { e.stopPropagation(); setPeekPreviewActive(!peekPreviewActive); }}
             className="mt-6 px-4 py-1.5 bg-red-950/40 border border-red-500/30 rounded-full flex items-center space-x-2 text-xs text-red-300 animate-pulse cursor-pointer"
           >
             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
@@ -205,7 +251,7 @@ export const LockScreen: React.FC = () => {
       {/* Bottom Actions */}
       <div className="w-full flex justify-between items-center px-8 pb-10">
         <button
-          onClick={() => setStandbyStyle('aod')}
+          onClick={(e) => { e.stopPropagation(); setStandbyStyle('aod'); }}
           className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
           title="Màn hình AOD tiết kiệm pin"
         >
@@ -213,14 +259,14 @@ export const LockScreen: React.FC = () => {
         </button>
 
         <button 
-          onClick={() => setShowPinModal(true)}
+          onClick={(e) => { e.stopPropagation(); handleOpenPinModal(); }}
           className="text-xs text-gray-400 font-light tracking-wide py-2 px-4 rounded-full bg-white/5 backdrop-blur-sm active:bg-white/20 transition"
         >
           Nhấn để mở khóa
         </button>
 
         <button
-          onClick={() => setUIMode('oled')}
+          onClick={(e) => { e.stopPropagation(); setUIMode('oled'); }}
           className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
           title="Màn hình đen OLED tuyệt đối"
         >
@@ -235,7 +281,10 @@ export const LockScreen: React.FC = () => {
 
       {/* PIN Keypad Modal (Tier 1: Workspace Unlock) */}
       {showPinModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex flex-col justify-between py-12 px-8 z-50 animate-fade-in">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 bg-black/90 backdrop-blur-xl flex flex-col justify-between py-12 px-8 z-50 animate-fade-in"
+        >
           <div className="flex flex-col items-center pt-8">
             <Unlock size={28} className="text-white/80 mb-4" />
             <h2 className="text-lg font-medium text-white mb-2">Nhập mã PIN</h2>

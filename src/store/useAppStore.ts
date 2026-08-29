@@ -22,6 +22,7 @@ interface AppState {
   peekPreviewActive: boolean;
   showSettings: boolean;
   showProUnlock: boolean;
+  isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
 
@@ -39,6 +40,7 @@ interface AppState {
   setPeekPreviewActive: (active: boolean) => void;
   setShowSettings: (show: boolean) => void;
   setShowProUnlock: (show: boolean) => void;
+  setIsFullscreen: (full: boolean) => void;
   setRecordingDuration: (duration: number | ((prev: number) => number)) => void;
   setVaultCount: (count: number) => void;
 }
@@ -58,6 +60,7 @@ export const useAppStore = create<AppState>((set) => ({
   peekPreviewActive: false,
   showSettings: false,
   showProUnlock: false,
+  isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
 
@@ -84,6 +87,7 @@ export const useAppStore = create<AppState>((set) => ({
   setPeekPreviewActive: (active) => set({ peekPreviewActive: active }),
   setShowSettings: (show) => set({ showSettings: show }),
   setShowProUnlock: (show) => set({ showProUnlock: show }),
+  setIsFullscreen: (full) => set({ isFullscreen: full }),
   setRecordingDuration: (duration) =>
     set((state) => ({
       recordingDuration: typeof duration === 'function' ? duration(state.recordingDuration) : duration,
