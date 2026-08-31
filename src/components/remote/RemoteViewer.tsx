@@ -21,7 +21,8 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
     uiMode: string;
     streamSource?: 'camera' | 'screen';
     cameraFacing?: string;
-  }>({ isRecording: false, uiMode: 'oled', streamSource: 'camera' });
+    motionDetected?: boolean;
+  }>({ isRecording: false, uiMode: 'oled', streamSource: 'camera', motionDetected: false });
   
   const [activeTab, setActiveTab] = useState<'mirror' | 'stealth' | 'guide'>('mirror');
   const [viewLayout, setViewLayout] = useState<'clone' | 'expand'>('clone');
@@ -29,6 +30,8 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [receivedSnapshot, setReceivedSnapshot] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   
   // Connection Modal States
   const [showConnectModal, setShowConnectModal] = useState(!initialRoomId);
@@ -79,6 +82,12 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
     if (initialRoomId) {
       connectToHost(initialRoomId);
     }
+
+    remoteStreamService.onSnapshotReceived = (dataUrl) => {
+      setIsCapturing(false);
+      setReceivedSnapshot(dataUrl);
+      addLog('Đã nhận ảnh Snapshot chất lượng cao từ điện thoại!');
+    };
     
     return () => {
       remoteStreamService.disconnect();
@@ -111,7 +120,10 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
     };
   };
 
-  const handleCommand = (cmd: 'start_record' | 'stop_record' | 'switch_camera' | 'black_screen' | 'switch_to_screen' | 'switch_to_camera') => {
+  const handleCommand = (cmd: 'start_record' | 'stop_record' | 'switch_camera' | 'black_screen' | 'switch_to_screen' | 'switch_to_camera' | 'take_snapshot') => {
+    if (cmd === 'take_snapshot') {
+      setIsCapturing(true);
+    }
     addLog(`Gửi lệnh: ${cmd}`);
     remoteStreamService.sendCommand(cmd);
   };
@@ -431,6 +443,15 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
                   </button>
 
                   <button
+                    onClick={() => handleCommand('take_snapshot')}
+                    disabled={isCapturing}
+                    className="p-3 rounded-xl flex flex-col items-center justify-center gap-2 bg-gradient-to-tr from-amber-600/20 to-yellow-600/20 border border-amber-500/40 text-amber-300 hover:bg-amber-600/30 transition active:scale-95"
+                  >
+                    {isCapturing ? <Loader2 size={20} className="animate-spin text-amber-400" /> : <Camera size={20} className="text-amber-400" />}
+                    <span className="text-xs font-bold">{isCapturing ? 'Đang chụp...' : 'Chụp Snapshot'}</span>
+                  </button>
+
+                  <button
                     onClick={() => handleCommand('switch_camera')}
                     className="p-3 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-750 transition"
                   >
@@ -440,10 +461,10 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
 
                   <button
                     onClick={() => handleCommand('black_screen')}
-                    className="col-span-2 p-3 rounded-xl flex items-center justify-center gap-2 bg-black border border-slate-800 text-slate-300 hover:border-slate-600 transition text-xs font-medium"
+                    className="p-3 rounded-xl flex flex-col items-center justify-center gap-2 bg-black border border-slate-800 text-slate-300 hover:border-slate-600 transition"
                   >
-                    <PowerOff size={16} />
-                    <span>Làm Đen Màn Hình Điện Thoại (OLED Stealth)</span>
+                    <PowerOff size={20} />
+                    <span className="text-xs font-bold">Làm Đen Màn Hình</span>
                   </button>
                 </div>
               </div>
@@ -659,6 +680,41 @@ export function RemoteViewer({ initialRoomId, onBackToPhone }: RemoteViewerProps
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Snapshot Preview Modal */}
+      {receivedSnapshot && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Camera size={18} className="text-amber-400" />
+                <h3 className="text-sm font-bold text-white">Ảnh Snapshot Tải Về Từ Điện Thoại</h3>
+              </div>
+              <button 
+                onClick={() => setReceivedSnapshot(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative rounded-2xl overflow-hidden bg-black max-h-[65vh] flex items-center justify-center border border-slate-800">
+              <img src={receivedSnapshot} alt="Snapshot" className="max-h-full max-w-full object-contain" />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-slate-400">Định dạng JPEG độ phân giải gốc</span>
+              <a
+                href={receivedSnapshot}
+                download={`Snapshot_${Date.now()}.jpg`}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 rounded-xl font-bold text-xs shadow flex items-center gap-1.5 transition active:scale-95"
+              >
+                <span>Tải Ảnh Về Máy Tính</span>
+              </a>
+            </div>
           </div>
         </div>
       )}

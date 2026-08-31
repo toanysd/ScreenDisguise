@@ -226,6 +226,76 @@ export const SettingsModal: React.FC = () => {
           </div>
         </div>
 
+        {/* Auto-chunk Recording Duration */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
+            <span className="flex items-center">
+              <Clock size={14} className="mr-1.5 text-emerald-400" />
+              Tự động tách file (Chống tràn RAM)
+            </span>
+            <span className="text-[10px] text-emerald-400 font-mono">
+              {useAppStore.getState().autoChunkMinutes === 0 ? 'Liên tục' : `Mỗi ${useAppStore.getState().autoChunkMinutes} phút`}
+            </span>
+          </label>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { label: '5 phút', value: 5 },
+              { label: '10 phút', value: 10 },
+              { label: '15 phút', value: 15 },
+              { label: '1 file', value: 0 },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => useAppStore.getState().setAutoChunkMinutes(opt.value)}
+                className={`py-1.5 rounded-lg text-xs font-medium border transition ${
+                  useAppStore.getState().autoChunkMinutes === opt.value
+                    ? 'bg-emerald-600 border-emerald-500 text-white'
+                    : 'bg-slate-800 border-slate-700 text-slate-300'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Motion Detection (Cảm biến chuyển động) */}
+        <div className="space-y-2 p-3 bg-slate-950 rounded-2xl border border-slate-800">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-300 flex items-center">
+              <Sun size={14} className="mr-1.5 text-indigo-400" />
+              Tự động quay khi có chuyển động
+            </label>
+            <button
+              onClick={() => useAppStore.getState().setMotionDetectionEnabled(!useAppStore.getState().motionDetectionEnabled)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                useAppStore.getState().motionDetectionEnabled
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+              }`}
+            >
+              {useAppStore.getState().motionDetectionEnabled ? 'Đang bật' : 'Tắt'}
+            </button>
+          </div>
+
+          {useAppStore.getState().motionDetectionEnabled && (
+            <div className="space-y-1 pt-1 border-t border-slate-800">
+              <div className="flex justify-between text-[11px] text-slate-400">
+                <span>Độ nhạy cảm biến:</span>
+                <span className="text-indigo-300 font-bold">{useAppStore.getState().motionSensitivity}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={80}
+                value={useAppStore.getState().motionSensitivity}
+                onChange={(e) => useAppStore.getState().setMotionSensitivity(parseInt(e.target.value, 10))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Screen Wake Lock */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-300 flex items-center">
@@ -242,6 +312,35 @@ export const SettingsModal: React.FC = () => {
           >
             {wakeLockAlwaysOn ? 'Đang bật (Màn hình luôn sáng)' : 'Tắt'}
           </button>
+        </div>
+
+        {/* iOS Quick Screen Cover & PiP Triggers */}
+        <div className="space-y-2 pt-2 border-t border-slate-800">
+          <label className="text-xs font-bold text-indigo-300 flex items-center">
+            <ShieldCheck size={14} className="mr-1.5" />
+            Lớp Phủ Che Ngụy Trang iPhone
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                useAppStore.getState().setShowPipModal(true);
+              }}
+              className="py-2 px-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-900/60 text-xs font-medium transition flex items-center justify-center space-x-1"
+            >
+              <span>Bật Cửa Sổ PiP Nổi</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                useAppStore.getState().setShowScreenCurtainGuide(true);
+              }}
+              className="py-2 px-2.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 text-xs font-medium transition flex items-center justify-center space-x-1"
+            >
+              <span>Phím Tắt Màn Che Đen</span>
+            </button>
+          </div>
         </div>
 
         {/* 2-Tier Security Passcode Section */}

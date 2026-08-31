@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
-import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock, Maximize, Minimize, Cast } from 'lucide-react';
+import { Lock, Unlock, Wifi, Battery, BatteryCharging, Moon, Eye, Clock, Maximize, Minimize, Cast, Layers, Sparkles, Activity } from 'lucide-react';
 
 export const LockScreen: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -25,6 +25,10 @@ export const LockScreen: React.FC = () => {
     setPeekPreviewActive,
     peekPreviewActive,
     setShowRemoteHostModal,
+    setShowPipModal,
+    pipActive,
+    motionDetected,
+    motionDetectionEnabled,
     isFullscreen,
     setIsFullscreen,
   } = useAppStore();
@@ -198,11 +202,27 @@ export const LockScreen: React.FC = () => {
 
       {/* Status Bar */}
       <div className="w-full flex justify-between items-center px-7 pt-3 text-xs font-medium opacity-80 z-20">
-        <span>{carrierName || 'docomo'}</span>
+        <div className="flex items-center space-x-2">
+          <span>{carrierName || 'docomo'}</span>
+          {motionDetectionEnabled && (
+            <span className={`flex items-center text-[10px] px-1.5 py-0.2 rounded-md ${motionDetected ? 'bg-indigo-500/30 text-indigo-300 animate-pulse' : 'text-slate-600'}`}>
+              <Activity size={10} className="mr-0.5" />
+              {motionDetected ? 'Chuyển động' : 'Cảm biến'}
+            </span>
+          )}
+        </div>
         <div className="flex items-center space-x-3">
           {recordingStatus === 'recording' && (
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block mr-1" />
           )}
+          {/* Quick PiP Floating button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowPipModal(true); }}
+            className={`p-1 transition active:scale-95 ${pipActive ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'}`}
+            title="Lớp Phủ PiP Nổi iPhone"
+          >
+            <Layers size={15} />
+          </button>
           {/* Quick Cast Button on Lockscreen */}
           <button
             onClick={(e) => { e.stopPropagation(); setShowRemoteHostModal(true); }}
@@ -260,11 +280,15 @@ export const LockScreen: React.FC = () => {
       {/* Bottom Actions */}
       <div className="w-full flex justify-between items-center px-8 pb-10">
         <button
-          onClick={(e) => { e.stopPropagation(); setStandbyStyle('aod'); }}
-          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:bg-white/30 transition"
-          title="Màn hình AOD tiết kiệm pin"
+          onClick={(e) => { e.stopPropagation(); setShowPipModal(true); }}
+          className={`w-12 h-12 rounded-full border backdrop-blur-md flex items-center justify-center transition active:scale-95 ${
+            pipActive 
+              ? 'bg-indigo-950/80 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/20' 
+              : 'bg-white/10 border-white/10 text-white/80'
+          }`}
+          title="Lớp Phủ PiP Nổi iPhone"
         >
-          <Clock size={19} />
+          <Layers size={19} />
         </button>
 
         <button 

@@ -7,6 +7,8 @@ export type RecordingStatus = 'idle' | 'recording' | 'paused';
 export type CameraFacing = 'environment' | 'user';
 export type VideoQuality = '1080p' | '720p' | '480p';
 
+export type PipStyle = 'oled' | 'clock' | 'stealth_icon';
+
 interface AppState {
   uiMode: UIMode;
   disguiseType: DisguiseType;
@@ -25,9 +27,19 @@ interface AppState {
   showProUnlock: boolean;
   showAppLauncher: boolean;
   showRemoteHostModal: boolean;
+  showPipModal: boolean;
+  showScreenCurtainGuide: boolean;
   isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
+
+  // New features state
+  autoChunkMinutes: number; // 0 = continuous, 5, 10, 15
+  motionDetectionEnabled: boolean;
+  motionSensitivity: number; // 10 to 80 (default 30)
+  motionDetected: boolean;
+  pipActive: boolean;
+  pipStyle: PipStyle;
 
   setUIMode: (mode: UIMode) => void;
   setDisguiseType: (type: DisguiseType) => void;
@@ -46,9 +58,18 @@ interface AppState {
   setShowProUnlock: (show: boolean) => void;
   setShowAppLauncher: (show: boolean) => void;
   setShowRemoteHostModal: (show: boolean) => void;
+  setShowPipModal: (show: boolean) => void;
+  setShowScreenCurtainGuide: (show: boolean) => void;
   setIsFullscreen: (full: boolean) => void;
   setRecordingDuration: (duration: number | ((prev: number) => number)) => void;
   setVaultCount: (count: number) => void;
+
+  setAutoChunkMinutes: (minutes: number) => void;
+  setMotionDetectionEnabled: (enabled: boolean) => void;
+  setMotionSensitivity: (sens: number) => void;
+  setMotionDetected: (detected: boolean) => void;
+  setPipActive: (active: boolean) => void;
+  setPipStyle: (style: PipStyle) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -69,9 +90,18 @@ export const useAppStore = create<AppState>((set) => ({
   showProUnlock: false,
   showAppLauncher: false,
   showRemoteHostModal: false,
+  showPipModal: false,
+  showScreenCurtainGuide: false,
   isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
+
+  autoChunkMinutes: parseInt(localStorage.getItem('sd_autochunk') || '5', 10),
+  motionDetectionEnabled: localStorage.getItem('sd_motion_enabled') === 'true',
+  motionSensitivity: parseInt(localStorage.getItem('sd_motion_sens') || '30', 10),
+  motionDetected: false,
+  pipActive: false,
+  pipStyle: (localStorage.getItem('sd_pip_style') as PipStyle) || 'oled',
 
   setUIMode: (mode) => set({ uiMode: mode }),
   setDisguiseType: (type) => set({ disguiseType: type }),
@@ -102,10 +132,31 @@ export const useAppStore = create<AppState>((set) => ({
   setShowProUnlock: (show) => set({ showProUnlock: show }),
   setShowAppLauncher: (show) => set({ showAppLauncher: show }),
   setShowRemoteHostModal: (show) => set({ showRemoteHostModal: show }),
+  setShowPipModal: (show) => set({ showPipModal: show }),
+  setShowScreenCurtainGuide: (show) => set({ showScreenCurtainGuide: show }),
   setIsFullscreen: (full) => set({ isFullscreen: full }),
   setRecordingDuration: (duration) =>
     set((state) => ({
       recordingDuration: typeof duration === 'function' ? duration(state.recordingDuration) : duration,
     })),
   setVaultCount: (count) => set({ vaultCount: count }),
+
+  setAutoChunkMinutes: (minutes) => {
+    localStorage.setItem('sd_autochunk', minutes.toString());
+    set({ autoChunkMinutes: minutes });
+  },
+  setMotionDetectionEnabled: (enabled) => {
+    localStorage.setItem('sd_motion_enabled', enabled ? 'true' : 'false');
+    set({ motionDetectionEnabled: enabled });
+  },
+  setMotionSensitivity: (sens) => {
+    localStorage.setItem('sd_motion_sens', sens.toString());
+    set({ motionSensitivity: sens });
+  },
+  setMotionDetected: (detected) => set({ motionDetected: detected }),
+  setPipActive: (active) => set({ pipActive: active }),
+  setPipStyle: (style) => {
+    localStorage.setItem('sd_pip_style', style);
+    set({ pipStyle: style });
+  },
 }));

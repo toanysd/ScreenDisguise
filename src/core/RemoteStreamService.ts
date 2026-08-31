@@ -1,9 +1,9 @@
-﻿import { Peer, DataConnection, MediaConnection } from 'peerjs';
+import { Peer, DataConnection, MediaConnection } from 'peerjs';
 import { cameraRecorder } from './CameraRecorder';
 import { useAppStore } from '../store/useAppStore';
 
 export interface RemoteCommand {
-  type: 'START_RECORD' | 'STOP_RECORD' | 'SWITCH_CAMERA' | 'SET_MODE_OLED' | 'SET_MODE_LOCK' | 'TAKE_SNAPSHOT' | 'SWITCH_STREAM_SOURCE' | 'SYNC_STATUS';
+  type: 'START_RECORD' | 'STOP_RECORD' | 'SWITCH_CAMERA' | 'SET_MODE_OLED' | 'SET_MODE_LOCK' | 'TAKE_SNAPSHOT' | 'SWITCH_STREAM_SOURCE' | 'SYNC_STATUS' | 'SNAPSHOT_RESULT';
   payload?: any;
 }
 
@@ -18,6 +18,7 @@ class RemoteStreamService {
 
   public onStatusChange?: (status: string) => void;
   public onPhoneStateChange?: (state: any) => void;
+  public onSnapshotReceived?: (dataUrl: string) => void;
 
   public getRoomId(): string {
     return this.roomId;
@@ -181,6 +182,21 @@ class RemoteStreamService {
       case 'SET_MODE_LOCK':
         store.setUIMode('lockscreen');
         break;
+      case 'TAKE_SNAPSHOT':
+        const blob = await cameraRecorder.takeSnapshot();
+        if (blob && this.currentConn && this.currentConn.open) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (reader.result && this.currentConn && this.currentConn.open) {
+              this.currentConn.send({
+                type: 'SNAPSHOT_RESULT',
+                payload: { dataUrl: reader.result as string },
+              });
+            }
+          };
+          reader.readAsDataURL(blob);
+        }
+        break;
     }
   }
 
@@ -195,6 +211,7 @@ class RemoteStreamService {
           cameraFacing: store.cameraFacing,
           uiMode: store.uiMode,
           streamSource: this.activeStreamSource,
+          motionDetected: store.motionDetected,
         },
       });
     }
@@ -235,6 +252,8 @@ class RemoteStreamService {
         this.currentConn.on('data', (data: any) => {
           if (data && data.type === 'SYNC_STATUS') {
             this.onPhoneStateChange?.(data.payload);
+          } else if (data && data.type === 'SNAPSHOT_RESULT') {
+            this.onSnapshotReceived?.(data.payload?.dataUrl);
           }
         });
 
@@ -270,7 +289,7 @@ class RemoteStreamService {
     });
   }
 
-  public sendCommand(cmd: 'start_record' | 'stop_record' | 'switch_camera' | 'black_screen' | 'switch_to_screen' | 'switch_to_camera') {
+  public sendCommand(cmd: 'start_record' | 'stop_record' | 'switch_camera' | 'black_screen' | 'switch_to_screen' | 'switch_to_camera' | 'take_snapshot') {
     if (!this.currentConn || !this.currentConn.open) return;
 
     switch (cmd) {
@@ -291,6 +310,9 @@ class RemoteStreamService {
         break;
       case 'switch_to_camera':
         this.currentConn.send({ type: 'SWITCH_STREAM_SOURCE', payload: { source: 'camera' } });
+        break;
+      case 'take_snapshot':
+        this.currentConn.send({ type: 'TAKE_SNAPSHOT' });
         break;
     }
   }

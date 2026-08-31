@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { wakeLockManager } from './core/WakeLockManager';
 import { LockScreen } from './components/standby/LockScreen';
@@ -12,6 +12,8 @@ import { AppLauncherModal } from './components/browser/AppLauncherModal';
 import { RemoteHostModal } from './components/remote/RemoteHostModal';
 import { RemoteViewer } from './components/remote/RemoteViewer';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { FloatingPipModal } from './components/pip/FloatingPipModal';
+import { ScreenCurtainGuideModal } from './components/guide/ScreenCurtainGuideModal';
 import { Monitor } from 'lucide-react';
 
 function App() {
@@ -85,6 +87,8 @@ function App() {
         onClose={() => setShowRemoteHostModal(false)} 
       />
       <SettingsModal />
+      <FloatingPipModal />
+      <ScreenCurtainGuideModal />
     </div>
   );
 }

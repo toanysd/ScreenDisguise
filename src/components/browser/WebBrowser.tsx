@@ -4,7 +4,7 @@ import { cameraRecorder } from '../../core/CameraRecorder';
 import { fullscreenManager } from '../../core/FullscreenManager';
 import { 
   ChevronLeft, ChevronRight, RotateCw, Lock, Home, 
-  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Cast 
+  Menu, Shield, Eye, Moon, Video, VideoOff, Settings, Crown, Maximize, Minimize, Cast, Layers 
 } from 'lucide-react';
 
 export const WebBrowser: React.FC = () => {
@@ -21,6 +21,8 @@ export const WebBrowser: React.FC = () => {
     setShowSettings,
     setShowProUnlock,
     setShowRemoteHostModal,
+    setShowPipModal,
+    pipActive,
     isFullscreen,
   } = useAppStore();
 
@@ -165,15 +167,18 @@ export const WebBrowser: React.FC = () => {
       </div>
 
       {/* Bottom Browser Bar */}
-      <div className="bg-slate-900 border-t border-slate-800 px-6 py-3 flex justify-between items-center text-slate-400 z-20">
+      <div className="bg-slate-900 border-t border-slate-800 px-5 py-3 flex justify-between items-center text-slate-400 z-20">
         <button onClick={() => setUIMode('lockscreen')} className="hover:text-slate-200" title="Khóa màn hình">
-          <Shield size={20} />
+          <Shield size={19} />
+        </button>
+        <button onClick={() => setShowPipModal(true)} className={`hover:text-indigo-400 ${pipActive ? 'text-indigo-400' : ''}`} title="Lớp Phủ PiP Nổi iPhone">
+          <Layers size={19} />
         </button>
         <button onClick={() => setShowRemoteHostModal(true)} className="hover:text-purple-400 text-slate-400" title="Truyền sang máy tính">
-          <Cast size={20} />
+          <Cast size={19} />
         </button>
         <button onClick={() => setPeekPreviewActive(!peekPreviewActive)} className={`hover:text-slate-200 ${peekPreviewActive ? 'text-blue-400' : ''}`} title="Xem trước góc máy">
-          <Eye size={20} />
+          <Eye size={19} />
         </button>
         <button onClick={() => setUIMode('calculator')} className="hover:text-slate-200 text-xs font-mono px-2 py-1 bg-slate-800 rounded" title="Chuyển sang Máy tính">
           CALC
@@ -183,10 +188,10 @@ export const WebBrowser: React.FC = () => {
           className="hover:text-amber-400 text-amber-500/80 flex items-center space-x-1" 
           title="Nâng cấp Pro"
         >
-          <Crown size={19} />
+          <Crown size={18} />
         </button>
         <button onClick={() => setShowActionSheet(true)} className="hover:text-slate-200" title="Tùy chọn">
-          <Menu size={20} />
+          <Menu size={19} />
         </button>
       </div>
 
@@ -236,6 +241,17 @@ export const WebBrowser: React.FC = () => {
               <button
                 onClick={() => {
                   setShowActionSheet(false);
+                  setShowPipModal(true);
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/20"
+              >
+                <Layers size={22} className="mb-1 text-indigo-400" />
+                <span className="text-[11px]">Lớp Phủ PiP</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowActionSheet(false);
                   setShowRemoteHostModal(true);
                 }}
                 className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-purple-500/40 text-purple-300 hover:bg-purple-950/20"
@@ -253,17 +269,6 @@ export const WebBrowser: React.FC = () => {
               >
                 <Lock size={22} className="mb-1 text-yellow-400" />
                 <span className="text-[11px]">Khóa màn</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowActionSheet(false);
-                  setShowProUnlock(true);
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800 border border-amber-500/30 text-amber-300 hover:bg-amber-950/20"
-              >
-                <Crown size={22} className="mb-1 text-amber-400" />
-                <span className="text-[11px]">Nâng cấp Pro</span>
               </button>
             </div>
 

@@ -1,5 +1,6 @@
 import { useAppStore, CameraFacing, VideoQuality } from '../store/useAppStore';
 import { indexedDBVault } from './IndexedDBVault';
+import { motionDetector } from './MotionDetector';
 
 class CameraRecorder {
   private stream: MediaStream | null = null;
@@ -7,6 +8,7 @@ class CameraRecorder {
   private recordedChunks: BlobPart[] = [];
   private timerInterval: any = null;
   private startTime: number = 0;
+  private isChunkSwitching: boolean = false;
 
   public getStream(): MediaStream | null {
     return this.stream;
@@ -31,6 +33,9 @@ class CameraRecorder {
 
     try {
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (useAppStore.getState().motionDetectionEnabled) {
+        motionDetector.start(this.stream);
+      }
       return true;
     } catch (err) {
       console.error('Camera init error, attempting fallback without resolution constraints:', err);
@@ -39,6 +44,9 @@ class CameraRecorder {
           video: { facingMode: facing },
           audio: audio,
         });
+        if (useAppStore.getState().motionDetectionEnabled) {
+          motionDetector.start(this.stream);
+        }
         return true;
       } catch (fallbackErr) {
         console.error('Camera fallback error:', fallbackErr);
@@ -56,6 +64,30 @@ class CameraRecorder {
       }
     }
 
+    this.startMediaRecorder();
+
+    useAppStore.getState().setRecordingStatus('recording');
+    useAppStore.getState().setRecordingDuration(0);
+
+    clearInterval(this.timerInterval);
+    this.timerInterval = setInterval(() => {
+      useAppStore.getState().setRecordingDuration((prev) => {
+        const next = prev + 1;
+        // Auto-chunking check
+        const chunkLimitSec = useAppStore.getState().autoChunkMinutes * 60;
+        if (chunkLimitSec > 0 && next >= chunkLimitSec && !this.isChunkSwitching) {
+          this.cycleChunk();
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return true;
+  }
+
+  private startMediaRecorder() {
+    if (!this.stream) return;
     this.recordedChunks = [];
     let mimeType = 'video/webm;codecs=vp9,opus';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -93,20 +125,74 @@ class CameraRecorder {
         useAppStore.getState().setVaultCount(count);
       }
       this.recordedChunks = [];
-      clearInterval(this.timerInterval);
-      useAppStore.getState().setRecordingDuration(0);
+
+      // If this stop was triggered by auto-chunk rollover, restart next chunk seamlessly
+      if (this.isChunkSwitching) {
+        this.isChunkSwitching = false;
+        this.startMediaRecorder();
+      } else {
+        clearInterval(this.timerInterval);
+        useAppStore.getState().setRecordingDuration(0);
+      }
     };
 
-    this.mediaRecorder.start(1000);
     this.startTime = Date.now();
-    useAppStore.getState().setRecordingStatus('recording');
-    useAppStore.getState().setRecordingDuration(0);
+    this.mediaRecorder.start(1000);
+  }
 
-    this.timerInterval = setInterval(() => {
-      useAppStore.getState().setRecordingDuration((prev) => prev + 1);
-    }, 1000);
+  private cycleChunk() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.isChunkSwitching = true;
+      this.mediaRecorder.stop();
+    }
+  }
 
-    return true;
+  public async takeSnapshot(): Promise<Blob | null> {
+    if (!this.stream) {
+      const state = useAppStore.getState();
+      const initialized = await this.initialize(state.cameraFacing, state.audioEnabled, state.videoQuality);
+      if (!initialized || !this.stream) return null;
+    }
+
+    const videoTrack = this.stream.getVideoTracks()[0];
+    if (!videoTrack) return null;
+
+    // Method 1: ImageCapture API (High quality hardware capture)
+    if ('ImageCapture' in window) {
+      try {
+        const imageCapture = new (window as any).ImageCapture(videoTrack);
+        const blob = await imageCapture.takePhoto();
+        return blob;
+      } catch (err) {
+        console.warn('ImageCapture takePhoto fallback to canvas:', err);
+      }
+    }
+
+    // Method 2: Offscreen video canvas fallback
+    return new Promise((resolve) => {
+      const tempVideo = document.createElement('video');
+      tempVideo.muted = true;
+      tempVideo.playsInline = true;
+      tempVideo.srcObject = this.stream;
+      tempVideo.onloadedmetadata = () => {
+        tempVideo.play().then(() => {
+          const canvas = document.createElement('canvas');
+          canvas.width = tempVideo.videoWidth || 1280;
+          canvas.height = tempVideo.videoHeight || 720;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              tempVideo.pause();
+              tempVideo.srcObject = null;
+              resolve(blob);
+            }, 'image/jpeg', 0.95);
+          } else {
+            resolve(null);
+          }
+        }).catch(() => resolve(null));
+      };
+    });
   }
 
   public pauseRecording() {
@@ -124,6 +210,7 @@ class CameraRecorder {
   }
 
   public stopRecording() {
+    this.isChunkSwitching = false;
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
@@ -132,6 +219,7 @@ class CameraRecorder {
   }
 
   private stopStreamOnly() {
+    motionDetector.stop();
     if (this.stream) {
       this.stream.getTracks().forEach((t) => t.stop());
       this.stream = null;
@@ -140,3 +228,4 @@ class CameraRecorder {
 }
 
 export const cameraRecorder = new CameraRecorder();
+
