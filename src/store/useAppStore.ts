@@ -32,6 +32,7 @@ interface AppState {
   isFullscreen: boolean;
   recordingDuration: number;
   vaultCount: number;
+  theme: 'light' | 'dark';
 
   // New features state
   autoChunkMinutes: number; // 0 = continuous, 5, 10, 15
@@ -95,6 +96,7 @@ export const useAppStore = create<AppState>((set) => ({
   isFullscreen: false,
   recordingDuration: 0,
   vaultCount: 0,
+  theme: (localStorage.getItem('sd_theme') as 'light' | 'dark') || 'light',
 
   autoChunkMinutes: parseInt(localStorage.getItem('sd_autochunk') || '5', 10),
   motionDetectionEnabled: localStorage.getItem('sd_motion_enabled') === 'true',

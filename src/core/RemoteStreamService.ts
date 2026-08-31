@@ -97,17 +97,21 @@ class RemoteStreamService {
           alert('Trình duyệt không hỗ trợ chia sẻ màn hình trực tiếp. Vui lòng mở trên Safari iOS 13+ hoặc Chrome.');
           return false;
         }
-        this.screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            displaySurface: 'monitor',
-          },
-          audio: true,
-        });
+        try {
+          this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+          });
+        } catch (err1) {
+          console.warn('First getDisplayMedia failed, trying fallback:', err1);
+          this.screenStream = await (navigator.mediaDevices as any).getDisplayMedia();
+        }
 
         // Handle user stop share from system UI
-        this.screenStream.getVideoTracks()[0].onended = () => {
-          this.setStreamSource('camera');
-        };
+        if (this.screenStream?.getVideoTracks()?.length) {
+          this.screenStream.getVideoTracks()[0].onended = () => {
+            this.setStreamSource('camera');
+          };
+        }
       } catch (err) {
         console.warn('Cannot capture screen:', err);
         this.activeStreamSource = 'camera';
